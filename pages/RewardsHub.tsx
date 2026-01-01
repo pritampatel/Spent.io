@@ -1,25 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, 
   Flame, 
   Star, 
-  Target, 
   Crown, 
-  Medal, 
-  CheckCircle2, 
-  ChevronRight, 
   Zap,
   LayoutGrid,
-  Sparkles,
-  Award,
   ShieldCheck,
   TrendingUp,
   Map,
   ArrowUpRight,
-  CircleSlash,
-  Gem
+  Gem,
+  CheckCircle2,
+  Lock,
+  Target
 } from 'lucide-react';
 import { Profile, Transaction } from '../types';
 
@@ -28,66 +24,69 @@ const m = motion as any;
 interface Props {
   profile: Profile;
   transactions: Transaction[];
-  onAddXP: (amt: number, msg: string, sourceX?: number, sourceY?: number) => void;
+  onAddXP: (amt: number, msg: string, sub?: string, sourceX?: number, sourceY?: number) => void;
 }
 
-const ACHIEVEMENTS = [
+interface Achievement {
+  id: string;
+  title: string;
+  desc: string;
+  icon: any;
+  category: string;
+  tiers: { target: number; xp: number }[];
+  current: number;
+}
+
+const MISSIONS: Achievement[] = [
   { 
     id: 'exp-1', 
-    title: 'Wealth Logger', 
-    desc: 'Record 10 unique expenses', 
-    pts: 25, 
-    target: 10, 
-    current: 4, 
+    title: 'The Spender', 
+    desc: 'Log unique expenses across categories', 
     category: 'Tracking', 
-    icon: <LayoutGrid size={18} className="text-blue-400" /> 
+    icon: <LayoutGrid size={18} className="text-blue-400" />,
+    tiers: [{ target: 5, xp: 50 }, { target: 20, xp: 200 }, { target: 100, xp: 1000 }],
+    current: 12
   },
   { 
-    id: 'cat-1', 
-    title: 'Diversifier', 
-    desc: 'Use 3 distinct categories', 
-    pts: 15, 
-    target: 3, 
-    current: 1, 
-    category: 'Tracking', 
-    icon: <Map size={18} className="text-emerald-400" /> 
-  },
-  { 
-    id: 'bud-1', 
-    title: 'Discipline', 
-    desc: '7 days under budget', 
-    pts: 100, 
-    target: 7, 
-    current: 2, 
+    id: 'ghost-1', 
+    title: 'Financial Ghost', 
+    desc: 'Zero-spending days tracked', 
     category: 'Budget', 
-    icon: <ShieldCheck size={18} className="text-purple-400" /> 
+    icon: <Target size={18} className="text-purple-400" />,
+    tiers: [{ target: 1, xp: 100 }, { target: 7, xp: 500 }, { target: 30, xp: 2500 }],
+    current: 3
   },
   { 
-    id: 'str-1', 
-    title: 'Momentum', 
-    desc: '3 day streak hit', 
-    pts: 50, 
-    target: 3, 
-    current: 1, 
+    id: 'pulse-1', 
+    title: 'The Pulse', 
+    desc: 'Consecutive days logging in', 
     category: 'Streak', 
-    icon: <Flame size={18} className="text-orange-400" /> 
+    icon: <Flame size={18} className="text-orange-400" />,
+    tiers: [{ target: 3, xp: 150 }, { target: 10, xp: 800 }, { target: 365, xp: 10000 }],
+    current: 1
+  },
+  { 
+    id: 'arch-1', 
+    title: 'The Architect', 
+    desc: 'Budgets maintained for full periods', 
+    category: 'Budget', 
+    icon: <ShieldCheck size={18} className="text-emerald-400" />,
+    tiers: [{ target: 1, xp: 300 }, { target: 5, xp: 1500 }, { target: 12, xp: 5000 }],
+    current: 0
   }
 ];
 
 const RewardsHub: React.FC<Props> = ({ profile, transactions, onAddXP }) => {
   const [activeCategory, setActiveCategory] = useState('All');
-  const [streakClaimed, setStreakClaimed] = useState(false);
 
   const categories = ['All', 'Tracking', 'Budget', 'Streak'];
-  const filteredAchievements = ACHIEVEMENTS.filter(a => 
-    activeCategory === 'All' || a.category === activeCategory
-  );
+  const filteredMissions = useMemo(() => 
+    MISSIONS.filter(m => activeCategory === 'All' || m.category === activeCategory)
+  , [activeCategory]);
 
-  const handleClaimStreak = (e: React.MouseEvent) => {
-    if (!streakClaimed) {
-      setStreakClaimed(true);
-      onAddXP(100, "Daily Momentum Claimed! +100 XP", e.clientX, e.clientY);
-    }
+  const handleClaim = (mission: Achievement, tierIdx: number, e: React.MouseEvent) => {
+    const tier = mission.tiers[tierIdx];
+    onAddXP(tier.xp, `Star Unlocked: ${mission.title}`, `You've earned ${tier.xp} XP for reaching tier ${tierIdx + 1}!`, e.clientX, e.clientY);
   };
 
   return (
@@ -96,192 +95,152 @@ const RewardsHub: React.FC<Props> = ({ profile, transactions, onAddXP }) => {
       animate={{ opacity: 1 }} 
       className="min-h-full bg-[#05070a] text-white selection:bg-indigo-500/30 overflow-x-hidden"
     >
-      {/* 1. COMPACT PRESTIGE HEADER */}
-      <header className="px-6 pt-10 pb-4 sticky top-0 z-50 bg-[#05070a]/80 backdrop-blur-xl border-b border-white/5">
+      <header className="px-5 pt-10 pb-4 sticky top-0 z-50 bg-[#05070a]/90 backdrop-blur-xl border-b border-white/5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="relative">
-                <div className="absolute inset-0 bg-amber-500 blur-md opacity-20" />
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg border border-white/10">
-                  <Crown size={20} className="text-white fill-white/20" />
+                <div className="absolute inset-0 bg-amber-500 blur-lg opacity-20" />
+                <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg border border-white/10">
+                  <Crown size={18} className="text-white fill-white/20" />
                 </div>
              </div>
              <div>
-                <h1 className="text-lg font-black tracking-tight leading-none mb-1">Prestige Hub</h1>
+                <h1 className="text-lg font-black tracking-tight leading-none mb-1">Prestige Vault</h1>
                 <div className="flex items-center gap-2">
-                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-500">Tier: Bronze</span>
+                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-500/90">Tier: Bronze</span>
                    <div className="w-1 h-1 bg-white/10 rounded-full" />
-                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Global #4,201</span>
+                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">Lv.{profile.level}</span>
                 </div>
              </div>
           </div>
-          <m.button 
-            whileTap={{ scale: 0.9 }}
-            onClick={handleClaimStreak}
-            disabled={streakClaimed}
-            className={`px-4 py-2 rounded-full flex items-center gap-2 border transition-all ${streakClaimed ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-white/5 border-white/10 text-white shadow-lg shadow-indigo-500/5'}`}
-          >
-            <Flame size={14} className={streakClaimed ? '' : 'text-orange-500'} fill={streakClaimed ? 'currentColor' : 'none'} />
-            <span className="text-[9px] font-black uppercase tracking-widest">{streakClaimed ? 'Claimed' : 'Daily Spin'}</span>
-          </m.button>
+          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-full flex items-center gap-1.5">
+            <TrendingUp size={12} className="text-emerald-400" />
+            <span className="text-[9px] font-black text-emerald-400 tracking-widest uppercase">Rank Up</span>
+          </div>
         </div>
       </header>
 
-      <div className="px-6 space-y-6 pt-6 pb-32">
-        
-        {/* 2. DENSE IDENTITY WIDGET */}
+      <div className="px-5 space-y-6 pt-6 pb-32">
         <section className="bg-slate-900/40 border border-white/5 rounded-[2rem] p-5 relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 blur-3xl rounded-full" />
-          <div className="flex items-center gap-5 relative z-10">
+          <div className="absolute -right-8 -top-8 w-24 h-24 bg-indigo-500/10 blur-[40px] rounded-full" />
+          <div className="flex items-center gap-4 relative z-10">
             <div className="relative shrink-0">
                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl relative overflow-hidden">
                   <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
-                  <span className="text-2xl font-black">{profile.level}</span>
+                  <span className="text-2xl font-black text-white">{profile.level}</span>
                </div>
-               <div className="absolute -bottom-2 -right-2 bg-amber-500 text-black w-6 h-6 rounded-lg flex items-center justify-center border-2 border-[#05070a] shadow-lg">
+               <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black w-6 h-6 rounded-lg flex items-center justify-center border-2 border-[#05070a] shadow-xl">
                   <Zap size={12} fill="currentColor" />
                </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-black tracking-tight truncate mb-1">{profile.name}</h2>
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-1">
-                   {[0,1,2].map(i => <div key={i} className={`w-3 h-3 rounded-full border border-[#05070a] ${i === 0 ? 'bg-amber-500' : 'bg-white/10'}`} />)}
-                </div>
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Rank: Elite Architect</span>
-              </div>
-            </div>
-            <div className="text-right">
-               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{profile.xp % 1000} XP</p>
-               <p className="text-[8px] font-bold text-slate-600 uppercase">of 1,000</p>
+              <h2 className="text-xl font-black tracking-tighter truncate mb-1">{profile.name}</h2>
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none">{profile.xp} XP Progress</p>
             </div>
           </div>
-
           <div className="mt-5 space-y-2">
-            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-0.5">
               <m.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${(profile.xp % 1000) / 10}%` }}
                 className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-amber-500 rounded-full"
               />
             </div>
-            <p className="text-[8px] font-black text-center text-slate-500 uppercase tracking-[0.2em]">Next Evolution: Silver Tier (820 XP Left)</p>
+            <p className="text-[8px] font-black text-center text-slate-500 uppercase tracking-[0.2em]">{1000 - (profile.xp % 1000)} XP to Next Prestige</p>
           </div>
         </section>
 
-        {/* 3. STATUS PILLS ROW */}
-        <section className="flex gap-3 overflow-x-auto no-scrollbar -mx-6 px-6">
-          <div className="bg-[#111624] border border-white/5 px-5 py-4 rounded-2xl flex items-center gap-4 flex-shrink-0">
-             <div className="p-2 bg-orange-500/10 rounded-lg"><Flame size={16} className="text-orange-500" /></div>
-             <div>
-               <p className="text-[14px] font-black leading-none">{profile.streak} Days</p>
-               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Current Streak</p>
-             </div>
-          </div>
-          <div className="bg-[#111624] border border-white/5 px-5 py-4 rounded-2xl flex items-center gap-4 flex-shrink-0">
-             <div className="p-2 bg-indigo-500/10 rounded-lg"><Star size={16} className="text-indigo-400" /></div>
-             <div>
-               <p className="text-[14px] font-black leading-none">12/51</p>
-               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Stars Earned</p>
-             </div>
-          </div>
-          <div className="bg-[#111624] border border-white/5 px-5 py-4 rounded-2xl flex items-center gap-4 flex-shrink-0">
-             <div className="p-2 bg-emerald-500/10 rounded-lg"><TrendingUp size={16} className="text-emerald-400" /></div>
-             <div>
-               <p className="text-[14px] font-black leading-none">+12.4%</p>
-               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Growth Velocity</p>
-             </div>
-          </div>
-        </section>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 border ${activeCategory === cat ? 'bg-white text-black border-white shadow-lg' : 'bg-[#111624] text-slate-500 border-white/5'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
 
-        {/* 4. ACTIVE MISSIONS (REDESIGNED LIST) */}
-        <section className="space-y-4 pt-2">
-          <div className="flex items-center justify-between px-2 mb-4">
-             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Available Missions</h3>
-             <div className="flex gap-2">
-                {categories.map(cat => (
-                  <button 
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${activeCategory === cat ? 'bg-white text-black border-white' : 'bg-white/5 text-slate-500 border-white/5'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-             </div>
-          </div>
-
-          <div className="space-y-3">
-            {filteredAchievements.map((achievement, idx) => (
-              <m.div 
-                layout
-                key={achievement.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 rounded-2xl p-4 flex items-center justify-between group transition-colors"
-              >
+        <section className="space-y-4">
+          {filteredMissions.map((mission, idx) => (
+            <m.div
+              key={mission.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-[#111624]/60 border border-white/5 rounded-[1.75rem] p-5 space-y-5"
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center shadow-inner border border-white/5 group-hover:scale-105 transition-transform">
-                      {achievement.icon}
+                   <div className="w-12 h-12 bg-slate-900 rounded-[1rem] flex items-center justify-center border border-white/5 shadow-inner">
+                      {mission.icon}
                    </div>
                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-[13px] font-black tracking-tight">{achievement.title}</h4>
-                        <span className="text-[7px] font-black bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded uppercase">+{achievement.pts} XP</span>
-                      </div>
-                      <div className="flex gap-1 mb-2">
-                         {[0,1,2].map(i => (
-                           <Star key={i} size={8} className={i < 1 ? 'text-amber-500 fill-current' : 'text-white/10'} />
-                         ))}
-                      </div>
-                      <p className="text-[9px] font-medium text-slate-500 leading-tight">{achievement.desc}</p>
+                      <h4 className="text-[14px] font-black tracking-tight text-white leading-none mb-1">{mission.title}</h4>
+                      <p className="text-[9px] font-medium text-slate-500 max-w-[160px] leading-tight">{mission.desc}</p>
                    </div>
                 </div>
+                <div className="text-right">
+                   <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{mission.current} Progress</span>
+                </div>
+              </div>
 
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                   <div className="relative w-12 h-12">
-                      <svg className="w-full h-full" viewBox="0 0 36 36">
-                        <path className="text-white/5 stroke-current" strokeWidth="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        <m.path 
-                          initial={{ strokeDasharray: "0, 100" }}
-                          animate={{ strokeDasharray: `${(achievement.current / achievement.target) * 100}, 100` }}
-                          className="text-indigo-500 stroke-current" 
-                          strokeWidth="3" 
-                          strokeLinecap="round" 
-                          fill="none" 
-                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" 
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                         <span className="text-[8px] font-black text-slate-400">{Math.round((achievement.current / achievement.target) * 100)}%</span>
-                      </div>
-                   </div>
-                   <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest">{achievement.current}/{achievement.target} Units</span>
-                </div>
-              </m.div>
-            ))}
-          </div>
+              <div className="grid grid-cols-3 gap-2">
+                {mission.tiers.map((tier, tIdx) => {
+                  const isCompleted = mission.current >= tier.target;
+                  const isClaimable = isCompleted;
+                  
+                  return (
+                    <m.button
+                      key={tIdx}
+                      whileTap={isClaimable ? { scale: 0.95 } : {}}
+                      onClick={(e) => isClaimable && handleClaim(mission, tIdx, e)}
+                      className={`relative py-3 px-2 rounded-2xl border-2 flex flex-col items-center gap-1.5 transition-all ${isCompleted ? 'bg-amber-500/5 border-amber-500/50 shadow-lg' : 'bg-white/[0.02] border-white/5'}`}
+                    >
+                      <Star 
+                        size={14} 
+                        className={isCompleted ? 'text-amber-400 fill-amber-400' : 'text-slate-800'} 
+                      />
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${isCompleted ? 'text-amber-400' : 'text-slate-600'}`}>
+                        {tier.target} pts
+                      </span>
+                      {!isCompleted && <Lock size={8} className="text-slate-800" />}
+                      {isCompleted && (
+                        <div className="absolute -top-1 -right-1 bg-[#05070a] rounded-full p-0.5">
+                           <CheckCircle2 size={10} className="text-amber-500" />
+                        </div>
+                      )}
+                    </m.button>
+                  );
+                })}
+              </div>
+
+              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                 <m.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (mission.current / mission.tiers[mission.tiers.length-1].target) * 100)}%` }}
+                    className="h-full bg-indigo-500 rounded-full" 
+                 />
+              </div>
+            </m.div>
+          ))}
         </section>
 
-        {/* 5. PRESTIGE UNLOCKS (COMPACT STRIP) */}
-        <section className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/10 rounded-[2rem] p-6 flex items-center justify-between">
+        <section className="bg-gradient-to-br from-[#1a1c2e] to-[#0d0e17] border border-white/5 rounded-[1.75rem] p-6 flex items-center justify-between">
            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
                  <Gem size={20} className="text-amber-500" />
               </div>
               <div>
-                 <h4 className="text-sm font-black tracking-tight">Prestige Title</h4>
-                 <p className="text-[9px] font-medium text-amber-500/60 uppercase tracking-widest">Penny Pincher • Active</p>
+                 <h4 className="text-sm font-black tracking-tight leading-none mb-1">Prestige Unlock</h4>
+                 <p className="text-[9px] font-medium text-amber-500/60 uppercase tracking-widest">Title: Penny Pincher</p>
               </div>
            </div>
            <ArrowUpRight size={16} className="text-amber-500/50" />
         </section>
 
       </div>
-
-      {/* BACKGROUND ACCENTS */}
-      <div className="fixed bottom-0 left-0 w-full h-64 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none" />
     </m.div>
   );
 };

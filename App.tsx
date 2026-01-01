@@ -11,7 +11,8 @@ import {
   FlaskConical,
   CloudLightning,
   Trophy,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -67,9 +68,10 @@ const App: React.FC = () => {
   const [triggerFlyingXP, setTriggerFlyingXP] = useState(false);
   const [flyingXPSource, setFlyingXPSource] = useState<{x: number, y: number} | undefined>(undefined);
   const [achievementMessage, setAchievementMessage] = useState<string | null>(null);
+  const [achievementSub, setAchievementSub] = useState<string | null>(null);
   
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('spent_io_state_v5');
+    const saved = localStorage.getItem('spent_io_state_v6');
     if (saved) return JSON.parse(saved);
     return {
       transactions: MOCK_TRANSACTIONS('1'),
@@ -84,13 +86,22 @@ const App: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('spent_io_state_v5', JSON.stringify(state));
+    localStorage.setItem('spent_io_state_v6', JSON.stringify(state));
   }, [state]);
 
+  // Handle Login Sequence
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitializing(false);
-    }, 2000);
+      
+      // Perform an Initial Sync after splash
+      setIsSyncing(true);
+      setTimeout(() => {
+        setIsSyncing(false);
+        // Daily login reward sequence
+        addXP(150, "Daily Reward Unlocked!", "You've earned +150 XP for starting your day with Spent.io.");
+      }, 1500);
+    }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -98,7 +109,7 @@ const App: React.FC = () => {
     state.profiles.find(p => p.id === state.activeProfileId) || state.profiles[0], 
   [state]);
 
-  const addXP = (amount: number, message?: string, sourceX?: number, sourceY?: number) => {
+  const addXP = (amount: number, message?: string, subMessage?: string, sourceX?: number, sourceY?: number) => {
     if (sourceX && sourceY) {
       setFlyingXPSource({ x: sourceX, y: sourceY });
     } else {
@@ -108,6 +119,7 @@ const App: React.FC = () => {
     setTriggerFlyingXP(true);
     if (message) {
       setAchievementMessage(message);
+      setAchievementSub(subMessage || null);
       setShowNotification(true);
     }
     
@@ -119,6 +131,7 @@ const App: React.FC = () => {
           if (newLevel > p.level) {
             sounds.playLevelUp();
             setAchievementMessage(`LEVEL UP! REACHED LEVEL ${newLevel}`);
+            setAchievementSub("You're a financial legend now!");
           } else {
             sounds.playReward();
           }
@@ -143,31 +156,42 @@ const App: React.FC = () => {
         ...prev,
         transactions: [transaction, ...prev.transactions]
       }));
-      // Default to center if no specific interaction element is targeted for source
-      addXP(50, "Transaction Logged! +50 XP");
+      addXP(50, "Transaction Logged!", "Maintaining discipline yields +50 XP");
       setIsSyncing(false);
       setIsAddModalOpen(false);
     }, 1200);
   };
 
+  const handleDeleteTransaction = (id: string) => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setState(p => ({...p, transactions: p.transactions.filter(t => t.id !== id)}));
+      setIsSyncing(false);
+    }, 800);
+  };
+
   const handleUpdateBudget = (cat: CategoryType, limit: number) => {
-    setState(prev => {
-      const existingIdx = prev.budgets.findIndex(b => b.category === cat && b.profileId === prev.activeProfileId);
-      const newBudgets = [...prev.budgets];
-      if (existingIdx > -1) {
-        newBudgets[existingIdx] = { ...newBudgets[existingIdx], limit };
-      } else {
-        newBudgets.push({ id: Math.random().toString(), category: cat, limit, profileId: prev.activeProfileId });
-      }
-      return { ...prev, budgets: newBudgets };
-    });
-    addXP(100, "Budget Strategy Updated! +100 XP");
+    setIsSyncing(true);
+    setTimeout(() => {
+      setState(prev => {
+        const existingIdx = prev.budgets.findIndex(b => b.category === cat && b.profileId === prev.activeProfileId);
+        const newBudgets = [...prev.budgets];
+        if (existingIdx > -1) {
+          newBudgets[existingIdx] = { ...newBudgets[existingIdx], limit };
+        } else {
+          newBudgets.push({ id: Math.random().toString(), category: cat, limit, profileId: prev.activeProfileId });
+        }
+        return { ...prev, budgets: newBudgets };
+      });
+      addXP(100, "Strategy Updated!", "New financial boundaries set. +100 XP");
+      setIsSyncing(false);
+    }, 1000);
   };
 
   const handleSwitchProfile = (id: string) => {
     setIsSyncing(true);
     setState(prev => ({ ...prev, activeProfileId: id }));
-    setTimeout(() => setIsSyncing(false), 1000);
+    setTimeout(() => setIsSyncing(false), 1200);
   };
 
   return (
@@ -181,6 +205,7 @@ const App: React.FC = () => {
           isVisible={showNotification} 
           onClose={() => setShowNotification(false)} 
           message={achievementMessage}
+          subMessage={achievementSub}
         />
         
         <FlyingXP 
@@ -203,7 +228,7 @@ const App: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <CloudLightning size={10} className={isSyncing ? "text-indigo-600 animate-pulse" : "text-slate-300"} />
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                      {isSyncing ? "Syncing..." : "Ready"}
+                      {isSyncing ? "Cloud Syncing..." : "Ready"}
                     </span>
                   </div>
                 </div>
@@ -214,7 +239,7 @@ const App: React.FC = () => {
                   <span className="text-[10px] font-black uppercase tracking-widest">{activeProfile.level}</span>
                 </NavLink>
                 <NavLink to="/profile" className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg flex items-center gap-2">
-                  <FlaskConical size={16} />
+                  <Settings2 size={16} />
                 </NavLink>
               </div>
             </header>
@@ -230,9 +255,7 @@ const App: React.FC = () => {
                   transactions={state.transactions.filter(t => t.profileId === state.activeProfileId)} 
                   activeProfile={activeProfile}
                   budgets={state.budgets.filter(b => b.profileId === state.activeProfileId)}
-                  onDeleteTransaction={(id) => {
-                    setState(p => ({...p, transactions: p.transactions.filter(t => t.id !== id)}));
-                  }}
+                  onDeleteTransaction={handleDeleteTransaction}
                 />} />
                 <Route path="/rewards" element={<RewardsHub 
                   profile={activeProfile} 
@@ -253,9 +276,7 @@ const App: React.FC = () => {
                 <Route path="/history" element={<HistoryPage 
                   transactions={state.transactions.filter(t => t.profileId === state.activeProfileId)}
                   currency={activeProfile.currency}
-                  onDeleteTransaction={(id) => {
-                    setState(p => ({...p, transactions: p.transactions.filter(t => t.id !== id)}));
-                  }}
+                  onDeleteTransaction={handleDeleteTransaction}
                 />} />
                 <Route path="/goals" element={<GoalsPage currency={activeProfile.currency} />} />
                 <Route path="/profile" element={<ProfilePage 
@@ -263,8 +284,7 @@ const App: React.FC = () => {
                   activeProfileId={state.activeProfileId}
                   onSwitchProfile={handleSwitchProfile}
                   onSimulateNotification={() => {}}
-                  // Fixed: Added explicit types and ensured compatibility with the updated ProfilePage Props interface
-                  onClaimReward={(amt: number, msg: string, x?: number, y?: number) => addXP(amt, msg, x, y)}
+                  onClaimReward={(amt, msg, x, y) => addXP(amt, msg, undefined, x, y)}
                 />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
