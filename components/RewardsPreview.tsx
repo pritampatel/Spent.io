@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Gift, Sparkles, LogIn, ChevronRight, CheckCircle2, Coins, ArrowRight } from 'lucide-react';
 
+const m = motion as any;
+
 const RewardsPreview: React.FC = () => {
   const [step, setStep] = useState<'login' | 'claiming' | 'success'>('login');
 
@@ -19,13 +21,12 @@ const RewardsPreview: React.FC = () => {
       </div>
 
       <div className="relative overflow-hidden bg-slate-900 rounded-[2.5rem] p-8 min-h-[320px] flex flex-col justify-center items-center text-center shadow-2xl">
-        {/* Abstract Background Blobs */}
         <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-600/20 blur-[60px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-600/20 blur-[60px] rounded-full" />
 
         <AnimatePresence mode="wait">
           {step === 'login' && (
-            <motion.div 
+            <m.div 
               key="login"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -41,7 +42,7 @@ const RewardsPreview: React.FC = () => {
                   Join Spent.io Rewards. Get <span className="text-amber-400 font-bold">500 XP</span> for your first transaction sync.
                 </p>
               </div>
-              <motion.button 
+              <m.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSimulateLogin}
@@ -49,12 +50,12 @@ const RewardsPreview: React.FC = () => {
               >
                 Connect Account
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </motion.div>
+              </m.button>
+            </m.div>
           )}
 
           {step === 'claiming' && (
-            <motion.div 
+            <m.div 
               key="claiming"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -62,7 +63,7 @@ const RewardsPreview: React.FC = () => {
               className="relative z-10 space-y-6"
             >
               <div className="relative">
-                <motion.div 
+                <m.div 
                   animate={{ rotate: 360 }}
                   transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                   className="absolute inset-0 bg-gradient-to-tr from-amber-500 to-transparent blur-xl opacity-50"
@@ -74,7 +75,7 @@ const RewardsPreview: React.FC = () => {
               <h3 className="text-xl font-black text-white tracking-tight">Claiming Reward...</h3>
               <div className="flex justify-center gap-1">
                 {[0, 1, 2].map(i => (
-                  <motion.div 
+                  <m.div 
                     key={i}
                     animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
                     transition={{ delay: i * 0.2, repeat: Infinity }}
@@ -82,18 +83,18 @@ const RewardsPreview: React.FC = () => {
                   />
                 ))}
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {step === 'success' && (
-            <motion.div 
+            <m.div 
               key="success"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               className="relative z-10 space-y-6"
             >
               <div className="relative mx-auto w-24 h-24">
-                <motion.div 
+                <m.div 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1.2, opacity: 0 }}
                   transition={{ duration: 0.8, repeat: Infinity }}
@@ -110,17 +111,16 @@ const RewardsPreview: React.FC = () => {
                   <span className="text-[10px] font-black text-white uppercase tracking-widest">+500 XP Earned</span>
                 </div>
               </div>
-              <motion.button 
+              <m.button 
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setStep('login')}
                 className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] hover:text-white transition-colors"
               >
                 Back to Dashboard
-              </motion.button>
+              </m.button>
               
-              {/* Confetti-like particles simulation with motion */}
               {Array.from({ length: 12 }).map((_, i) => (
-                <motion.div
+                <m.div
                   key={i}
                   initial={{ x: 0, y: 0, opacity: 1 }}
                   animate={{ 
@@ -133,7 +133,7 @@ const RewardsPreview: React.FC = () => {
                   className="absolute left-1/2 top-1/2 w-2 h-2 bg-amber-400 rounded-full"
                 />
               ))}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

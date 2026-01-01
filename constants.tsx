@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { Profile } from './types';
 
-export const CATEGORIES: Record<string, { color: string; icon: React.ReactNode }> = {
+// Updated: Changed icon type from React.ReactNode to React.ReactElement to fix type errors when using cloneElement
+export const CATEGORIES: Record<string, { color: string; icon: React.ReactElement }> = {
   Food: { color: 'bg-orange-100 text-orange-600', icon: <Utensils size={20} /> },
   Transport: { color: 'bg-blue-100 text-blue-600', icon: <Car size={20} /> },
   Shopping: { color: 'bg-pink-100 text-pink-600', icon: <ShoppingBag size={20} /> },

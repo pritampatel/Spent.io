@@ -7,6 +7,8 @@ import { Transaction, Profile, Budget } from '../types';
 import TransactionCard from '../components/TransactionCard';
 import { CATEGORIES } from '../constants';
 
+const m = motion as any;
+
 interface Props {
   transactions: Transaction[];
   activeProfile: Profile;
@@ -34,17 +36,15 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
   };
 
   return (
-    <motion.div 
+    <m.div
       variants={container}
       initial="hidden"
       animate="show"
       className="px-6 py-4 space-y-8"
     >
-      {/* Portfolio Card Section */}
-      <motion.section variants={item} className="relative group">
+      <m.section variants={item} className="relative group">
         <div className="absolute inset-0 bg-indigo-600 rounded-[2.5rem] blur-[80px] opacity-10 group-hover:opacity-20 transition-opacity" />
         <div className="relative h-64 bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl overflow-hidden flex flex-col justify-between">
-          {/* Abstract geometric background elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-[100px] translate-x-10 -translate-y-10" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[60px]" />
           
@@ -81,11 +81,10 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
             </div>
           </div>
         </div>
-      </motion.section>
+      </m.section>
 
-      {/* Bento Mini Cards */}
       <section className="grid grid-cols-2 gap-4">
-        <motion.div 
+        <m.div
           variants={item}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/analysis')}
@@ -101,9 +100,9 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
               <span className="text-sm font-bold text-slate-300">/ 100</span>
             </div>
           </div>
-        </motion.div>
+        </m.div>
 
-        <motion.div 
+        <m.div
           variants={item}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/budgets')}
@@ -117,11 +116,10 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Budgets</p>
             <h4 className="text-2xl font-black text-slate-800">2 Active</h4>
           </div>
-        </motion.div>
+        </m.div>
       </section>
 
-      {/* AI Intelligence Snippet */}
-      <motion.section 
+      <m.section
         variants={item}
         className="relative bg-white rounded-[2rem] p-6 flex items-center gap-5 border border-indigo-50 shadow-[0_15px_30px_-10px_rgba(99,102,241,0.1)] group"
       >
@@ -137,16 +135,15 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
             "Your weekend spending is slightly higher than average. Save 10% more this week?"
           </p>
         </div>
-      </motion.section>
+      </m.section>
 
-      {/* Categories Horizontal - Refined */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Quick Filters</h3>
         </div>
         <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 -mx-6 px-6">
           {(Object.keys(CATEGORIES) as Array<keyof typeof CATEGORIES>).map((cat) => (
-            <motion.div 
+            <m.div 
               whileTap={{ scale: 0.95 }}
               key={cat} 
               className="flex-shrink-0 bg-white p-4 rounded-[1.75rem] border border-slate-100 soft-shadow flex flex-col items-center gap-3 min-w-[95px] hover:border-indigo-100 transition-colors"
@@ -155,12 +152,11 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
                 {CATEGORIES[cat].icon}
               </div>
               <span className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">{cat}</span>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       </section>
 
-      {/* Recent Activity */}
       <section className="space-y-5">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
@@ -190,7 +186,7 @@ const Home: React.FC<Props> = ({ transactions, activeProfile, budgets, onDeleteT
       </section>
 
       <div className="h-10" />
-    </motion.div>
+    </m.div>
   );
 };
 

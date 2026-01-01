@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, Clock, Moon, Sparkles, ChevronRight } from 'lucide-react';
 
+const m = motion as any;
+
 const ReminderSettings: React.FC = () => {
   const [isEnabled, setIsEnabled] = useState(true);
   const [time, setTime] = useState('22:00');
@@ -30,7 +32,7 @@ const ReminderSettings: React.FC = () => {
             onClick={() => setIsEnabled(!isEnabled)}
             className={`relative w-14 h-8 rounded-full transition-colors duration-300 ${isEnabled ? 'bg-indigo-600' : 'bg-slate-200'}`}
           >
-            <motion.div 
+            <m.div 
               animate={{ x: isEnabled ? 28 : 4 }}
               className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-md"
             />
@@ -61,12 +63,12 @@ const ReminderSettings: React.FC = () => {
           </div>
         </div>
 
-        <motion.button 
+        <m.button 
           whileTap={{ scale: 0.98 }}
           className="w-full py-5 bg-slate-900 text-white rounded-[1.75rem] font-black uppercase text-[10px] tracking-widest shadow-xl shadow-slate-200"
         >
           Save Schedule
-        </motion.button>
+        </m.button>
       </div>
     </div>
   );

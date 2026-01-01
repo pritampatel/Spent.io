@@ -9,15 +9,31 @@ import {
   BarChart,
   Bar,
   XAxis, 
-  YAxis, 
   Tooltip as RechartsTooltip,
-  CartesianGrid
 } from 'recharts';
-import { Sparkles, BrainCircuit, Calendar, Filter, Zap, Info } from 'lucide-react';
+import { 
+  Sparkles, 
+  BrainCircuit, 
+  Calendar, 
+  Zap, 
+  FileText,
+  Share2, 
+  ArrowUpRight, 
+  ChevronRight,
+  Layout,
+  Layers,
+  Activity,
+  ArrowRight,
+  TestTube2,
+  Trash2,
+  Undo2
+} from 'lucide-react';
 import { format, subDays, isSameDay } from 'date-fns';
 import { Transaction, Budget } from '../types';
 import { CATEGORIES } from '../constants';
 import { getAIInsights } from '../services/geminiService';
+
+const m = motion as any;
 
 interface Props {
   transactions: Transaction[];
@@ -28,11 +44,18 @@ interface Props {
 const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#475569'];
 
 const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
-  const [aiTips, setAiTips] = useState<{ tip: string; priority: string }[]>([]);
+  const [reportData, setReportData] = useState<any>(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [showInfographic, setShowInfographic] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isArchitectMode, setIsArchitectMode] = useState(false);
+  const [architectScenarios, setArchitectScenarios] = useState<{name: string, amt: number}[]>([]);
 
   const expenses = useMemo(() => transactions.filter(t => t.type === 'expense'), [transactions]);
+
+  const architectImpact = useMemo(() => {
+    return architectScenarios.reduce((sum, s) => sum + s.amt, 0);
+  }, [architectScenarios]);
 
   const categoryData = useMemo(() => {
     return (Object.keys(CATEGORIES) as Array<keyof typeof CATEGORIES>).map(cat => {
@@ -49,244 +72,295 @@ const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
       const dayTotal = expenses
         .filter(t => isSameDay(new Date(t.date), targetDate))
         .reduce((sum, t) => sum + t.amount, 0);
-      
-      return {
-        day: format(targetDate, 'EEE'),
-        amount: dayTotal
-      };
+      return { day: format(targetDate, 'EEE'), amount: dayTotal };
     });
   }, [expenses]);
 
   const fetchAI = async () => {
     if (transactions.length === 0) return;
     setLoadingAI(true);
-    const tips = await getAIInsights(transactions, budgets);
-    setAiTips(tips);
-    setLoadingAI(false);
+    try {
+      const data = await getAIInsights(transactions, budgets);
+      setReportData(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAI(false);
+    }
   };
 
   useEffect(() => {
-    if (transactions.length > 2 && aiTips.length === 0) {
+    if (transactions.length > 2 && !reportData) {
       fetchAI();
     }
   }, [transactions.length]);
 
-  const onPieEnter = (_: any, index: number) => {
-    setActiveIndex(index);
-  };
-
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <motion.div 
+        <m.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-slate-900/95 backdrop-blur-2xl text-white px-5 py-4 rounded-[1.5rem] shadow-2xl border border-white/10"
+          className="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10"
         >
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">
-            {payload[0].name || payload[0].payload.day} Breakdown
-          </p>
-          <p className="text-2xl font-black tracking-tighter">{currency}{payload[0].value.toLocaleString()}</p>
-        </motion.div>
+          <p className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">{payload[0].name || payload[0].payload.day}</p>
+          <p className="text-xl font-black">{currency}{payload[0].value.toLocaleString()}</p>
+        </m.div>
       );
     }
     return null;
   };
 
-  return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      className="px-6 py-4 space-y-10"
+  const InfographicMode = () => (
+    <m.div 
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 50 }}
+      className="fixed inset-0 z-[100] bg-white overflow-y-auto no-scrollbar p-8 pb-32"
     >
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Portfolio Analysis</h2>
-          <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Usage & Performance</p>
+      <div className="max-w-md mx-auto space-y-16">
+        <header className="flex items-center justify-between">
+          <button onClick={() => setShowInfographic(false)} className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
+            <Undo2 size={14} /> Back
+          </button>
+          <button className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-white">
+            <Share2 size={18} />
+          </button>
+        </header>
+
+        <div className="space-y-4 text-center">
+          <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.5em]">Annualized Intelligence</h2>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">Wealth Digest.</h1>
+          <p className="text-slate-400 text-xs font-black uppercase tracking-widest">{format(new Date(), 'MMMM yyyy')}</p>
         </div>
-        <motion.button 
-          whileTap={{ scale: 0.9 }}
-          className="p-3 bg-white rounded-2xl soft-shadow text-slate-400 border border-slate-50"
-        >
-          <Filter size={20} />
-        </motion.button>
-      </header>
 
-      {/* Hero Interactive Pie Chart */}
-      <section className="relative">
-        <div className="absolute inset-0 bg-indigo-500 rounded-[3rem] blur-[80px] opacity-5 pointer-events-none" />
-        <div className="relative bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50">
-          <div className="flex items-center justify-between mb-8">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Expense Diversification</h4>
-            <div className="p-2 bg-indigo-50 rounded-xl">
-              <Info size={14} className="text-indigo-600" />
-            </div>
+        <section className="bg-slate-900 text-white rounded-[3.5rem] p-12 space-y-10 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 blur-[100px] opacity-20 -translate-y-10 translate-x-10" />
+          <div className="space-y-2">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Executive Score</h3>
+            <h2 className="text-8xl font-black tracking-tighter leading-none">{reportData?.score || 82}</h2>
           </div>
-          
-          <div className="h-72 w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={75}
-                  outerRadius={105}
-                  paddingAngle={6}
-                  dataKey="value"
-                  onMouseEnter={onPieEnter}
-                  onMouseLeave={() => setActiveIndex(null)}
-                  stroke="none"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={CHART_COLORS[index % CHART_COLORS.length]} 
-                      opacity={activeIndex === null || activeIndex === index ? 1 : 0.4}
-                      className="transition-all duration-500 cursor-pointer"
-                    />
-                  ))}
-                </Pie>
-                <RechartsTooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-            
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">Portfolio Out</span>
-              <span className="text-3xl font-black text-slate-900 tracking-tighter">
-                {currency}{expenses.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-              </span>
-            </div>
-          </div>
+          <p className="text-sm font-bold text-slate-300 leading-relaxed italic border-l-2 border-indigo-500 pl-6">
+            "{reportData?.prediction || "Maintaining current velocity will ensure target savings are reached by month-end with minimal adjustments."}"
+          </p>
+        </section>
 
-          <div className="grid grid-cols-2 gap-x-12 gap-y-5 mt-12">
-            {categoryData.slice(0, 4).map((d, i) => (
-              <div key={d.name} className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{d.name}</span>
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-sm font-black text-slate-900">{((d.value / Math.max(expenses.reduce((s, t) => s + t.amount, 0), 1)) * 100).toFixed(0)}%</span>
-                </div>
+        <section className="space-y-6">
+          <h3 className="text-2xl font-black text-slate-900 tracking-tight px-2">High-Impact Facts</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {reportData?.stats?.map((stat: any, i: number) => (
+              <div key={i} className="flex items-center justify-between p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</span>
+                <span className="text-xl font-black text-slate-900">{stat.value}</span>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Intelligence Dashboard Card */}
-      <section className="relative">
-        <div className="absolute -inset-1.5 bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-[3rem] blur-xl" />
-        <div className="relative bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/30 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
-          
-          <div className="relative z-10 space-y-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white/10 backdrop-blur-2xl rounded-2xl flex items-center justify-center border border-white/10">
-                  <BrainCircuit size={28} className="text-indigo-400" strokeWidth={2.5} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black tracking-tight">AI Financial Brain</h3>
-                  <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.25em]">Gemini 3 Intelligence</p>
-                </div>
-              </div>
-              <motion.button 
-                whileTap={{ rotate: 180 }}
-                onClick={fetchAI}
-                disabled={loadingAI}
-                className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 border border-white/5 transition-colors disabled:opacity-50"
-              >
-                <Sparkles size={20} className={loadingAI ? 'animate-spin' : 'text-amber-400'} />
-              </motion.button>
-            </div>
-
-            <div className="space-y-4">
-              <AnimatePresence mode="wait">
-                {loadingAI ? (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-4 py-4"
-                  >
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="h-4 bg-white/5 rounded-full overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
-                      </div>
-                    ))}
-                  </motion.div>
-                ) : aiTips.length > 0 ? (
-                  aiTips.map((tip, idx) => (
-                    <motion.div 
-                      key={idx}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="p-5 bg-white/5 border border-white/10 rounded-[1.75rem] flex gap-5"
-                    >
-                      <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${tip.priority === 'High' ? 'bg-orange-500 shadow-[0_0_15px_rgba(249,115,22,1)]' : 'bg-indigo-400'}`} />
-                      <p className="text-sm font-bold text-slate-200 leading-relaxed italic opacity-95">"{tip.tip}"</p>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 opacity-30">
-                    <Zap size={32} className="mx-auto mb-4" />
-                    <p className="text-[11px] font-black uppercase tracking-widest">Awaiting Fresh Intelligence</p>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Spending Trend Over Time */}
-      <section className="bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50">
-        <div className="flex items-center justify-between mb-12">
+        <section className="space-y-8 bg-indigo-50 rounded-[3.5rem] p-10 border border-indigo-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
-              <Calendar size={20} />
-            </div>
-            <div>
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Usage Over Time</h4>
-              <p className="text-xs font-black text-slate-900 tracking-tight">Last 7 Days</p>
+            <Sparkles size={24} className="text-indigo-600" />
+            <h3 className="text-xl font-black text-indigo-900 tracking-tight">Strategic Steps</h3>
+          </div>
+          <div className="space-y-6">
+            {reportData?.insights?.map((insight: any, i: number) => (
+              <div key={i} className="flex gap-6">
+                <span className="text-3xl font-black text-indigo-200">{i + 1}</span>
+                <p className="text-sm font-bold text-indigo-900/70 leading-relaxed">{insight.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="text-center pt-20 border-t border-slate-100">
+           <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">The Spent Intelligence Core v4.0</p>
+        </div>
+      </div>
+    </m.div>
+  );
+
+  return (
+    <m.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="px-6 py-4 space-y-10"
+    >
+      <AnimatePresence>
+        {showInfographic && <InfographicMode key="infographic" />}
+      </AnimatePresence>
+
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Intelligence</h2>
+          <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Data-Driven Future</p>
+        </div>
+        <div className="flex gap-2">
+          <m.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsArchitectMode(!isArchitectMode)}
+            className={`p-3.5 rounded-[1.25rem] shadow-xl flex items-center gap-2 transition-colors ${isArchitectMode ? 'bg-amber-500 text-white' : 'bg-white text-slate-400'}`}
+          >
+            <TestTube2 size={20} />
+          </m.button>
+          <m.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowInfographic(true)}
+            className="p-3.5 bg-slate-900 text-white rounded-[1.25rem] shadow-xl flex items-center gap-2"
+          >
+            <FileText size={20} />
+          </m.button>
+        </div>
+      </header>
+
+      <AnimatePresence>
+        {isArchitectMode && (
+          <m.section 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-slate-900 rounded-[3rem] p-8 space-y-8 overflow-hidden relative"
+          >
+             <div className="absolute top-0 right-0 p-4 opacity-20"><BrainCircuit size={48} className="text-amber-500" /></div>
+             <div className="space-y-1 relative z-10">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Scenario Architect</h4>
+               <p className="text-sm font-bold text-slate-100">Simulate potential future expenses to see impact.</p>
+             </div>
+
+             <div className="space-y-4">
+               {architectScenarios.map((s, i) => (
+                 <div key={i} className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10">
+                   <div className="flex flex-col">
+                     <span className="text-[11px] font-black text-white">{s.name}</span>
+                     <span className="text-[9px] font-black text-slate-500 uppercase">Impact: High</span>
+                   </div>
+                   <div className="flex items-center gap-4">
+                     <span className="text-sm font-black text-amber-500">-{currency}{s.amt.toLocaleString()}</span>
+                     <button onClick={() => setArchitectScenarios(prev => prev.filter((_, idx) => idx !== i))}>
+                        <Trash2 size={16} className="text-red-400" />
+                     </button>
+                   </div>
+                 </div>
+               ))}
+               <button 
+                onClick={() => setArchitectScenarios(prev => [...prev, {name: 'Simulation Asset', amt: 500}])}
+                className="w-full py-4 border-2 border-dashed border-white/20 rounded-2xl text-white/40 text-[10px] font-black uppercase tracking-widest hover:border-amber-500/50 hover:text-amber-500 transition-colors"
+               >
+                 + Draft Potential Expense
+               </button>
+             </div>
+
+             {architectImpact > 0 && (
+               <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                 <span className="text-[10px] font-black uppercase text-slate-400">Projected Health Score Shift</span>
+                 <span className="text-2xl font-black text-red-500">-{Math.round(architectImpact / 100)} pts</span>
+               </div>
+             )}
+          </m.section>
+        )}
+      </AnimatePresence>
+
+      <section className="bg-white rounded-[3.5rem] p-10 soft-shadow border border-slate-50 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-[80px] -translate-x-10 translate-y-10 group-hover:scale-110 transition-transform duration-1000" />
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="text-center mb-10">
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">Wealth Efficiency Score</h4>
+            <div className="flex items-baseline justify-center gap-2">
+              <h1 className="text-7xl font-black text-slate-900 tracking-tighter">
+                {Math.max(0, (reportData?.score || 82) - Math.round(architectImpact / 100))}
+              </h1>
+              <div className="flex flex-col items-start">
+                 <span className={`${architectImpact > 0 ? 'text-red-500' : 'text-emerald-500'} font-black text-sm flex items-center gap-0.5`}>
+                   {architectImpact > 0 ? '-' : '+'}{architectImpact > 0 ? Math.round(architectImpact / 100) : '4'}%
+                 </span>
+                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Real-time</span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="0" />
-              <XAxis 
-                dataKey="day" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fontWeight: 900, fill: '#cbd5e1', textTransform: 'uppercase' }}
-                dy={20}
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fontSize: 10, fontWeight: 900, fill: '#cbd5e1' }}
-              />
-              <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc', radius: 10 }} />
-              <Bar 
-                dataKey="amount" 
-                fill="#0f172a" 
-                radius={[10, 10, 10, 10]} 
-                barSize={24}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+
+          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner mb-6 border border-slate-50">
+            <m.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.max(0, (reportData?.score || 82) - Math.round(architectImpact / 100))}%` }}
+              className={`h-full ${architectImpact > 0 ? 'bg-amber-500' : 'bg-indigo-600'} rounded-full transition-colors`}
+            />
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
+            <Zap size={14} className="text-indigo-600 fill-current" />
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              {architectImpact > 0 ? 'Simulation: Impact Projected' : 'Status: Optimal'}
+            </p>
+          </div>
         </div>
       </section>
-      
+
+      <section className="grid grid-cols-1 gap-6">
+        <div className="bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50 group">
+          <div className="flex items-center justify-between mb-8">
+            <div className="space-y-1">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Distribution</h4>
+              <p className="text-lg font-black text-slate-900 tracking-tight">Category Mix</p>
+            </div>
+            <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:scale-110 transition-transform">
+              <Layers size={20} />
+            </div>
+          </div>
+          <div className="h-64 relative">
+             <ResponsiveContainer width="100%" height="100%">
+               <PieChart>
+                 <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={95}
+                    paddingAngle={8}
+                    dataKey="value"
+                    onMouseEnter={(_, i) => setActiveIndex(i)}
+                    onMouseLeave={() => setActiveIndex(null)}
+                    stroke="none"
+                 >
+                   {categoryData.map((_, index) => (
+                     <Cell 
+                        key={`cell-${index}`} 
+                        fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                        opacity={activeIndex === null || activeIndex === index ? 1 : 0.4}
+                      />
+                   ))}
+                 </Pie>
+                 <RechartsTooltip content={<CustomTooltip />} />
+               </PieChart>
+             </ResponsiveContainer>
+             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Diversity</span>
+               <span className="text-2xl font-black text-slate-900">{categoryData.length} Cats</span>
+             </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 rounded-[3rem] p-10 border border-slate-100 group">
+          <div className="flex items-center justify-between mb-10">
+            <div className="space-y-1">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Velocity</h4>
+              <p className="text-lg font-black text-slate-900 tracking-tight">Last 7 Days</p>
+            </div>
+            <div className="p-3 bg-white rounded-2xl text-slate-400 shadow-sm">
+              <Activity size={20} />
+            </div>
+          </div>
+          <div className="h-48 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#cbd5e1' }} dy={10} />
+                <Bar dataKey="amount" fill="#0f172a" radius={[12, 12, 12, 12]} barSize={22} />
+                <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#e2e8f0', radius: 12 }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </section>
+
       <div className="h-20" />
-    </motion.div>
+    </m.div>
   );
 };
 

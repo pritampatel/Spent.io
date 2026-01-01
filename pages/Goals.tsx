@@ -3,6 +3,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, Flag, Rocket, Plus, ChevronRight, Zap } from 'lucide-react';
 
+const m = motion as any;
+
 interface Props {
   currency: string;
 }
@@ -15,7 +17,7 @@ const GoalsPage: React.FC<Props> = ({ currency }) => {
   ];
 
   return (
-    <motion.div 
+    <m.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
@@ -26,19 +28,19 @@ const GoalsPage: React.FC<Props> = ({ currency }) => {
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Savings Goals</h2>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visualize your future</p>
         </div>
-        <motion.button 
+        <m.button 
           whileTap={{ scale: 0.9 }}
           className="w-11 h-11 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-xl"
         >
           <Plus size={20} />
-        </motion.button>
+        </m.button>
       </header>
 
       <div className="space-y-6">
         {goals.map((goal, idx) => {
           const percentage = (goal.current / goal.target) * 100;
           return (
-            <motion.div 
+            <m.div 
               key={idx}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -66,24 +68,23 @@ const GoalsPage: React.FC<Props> = ({ currency }) => {
                   <span className="text-indigo-600">{percentage.toFixed(0)}%</span>
                 </div>
                 <div className="h-5 w-full bg-slate-100 rounded-full overflow-hidden border-2 border-slate-50 shadow-inner">
-                  <motion.div 
+                  <m.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
                     className={`h-full ${goal.color} relative`}
                   >
-                    <motion.div 
+                    <m.div 
                       animate={{ x: ['-100%', '200%'] }}
                       transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                       className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                     />
-                  </motion.div>
+                  </m.div>
                 </div>
               </div>
 
-              {/* Background accent */}
               <div className={`absolute top-0 right-0 w-24 h-24 ${goal.color} opacity-[0.03] rounded-full -translate-y-8 translate-x-8`} />
-            </motion.div>
+            </m.div>
           );
         })}
       </div>
@@ -101,7 +102,7 @@ const GoalsPage: React.FC<Props> = ({ currency }) => {
       </div>
 
       <div className="h-10" />
-    </motion.div>
+    </m.div>
   );
 };
 

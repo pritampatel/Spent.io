@@ -7,6 +7,8 @@ import { Transaction } from '../types';
 import TransactionCard from '../components/TransactionCard';
 import { format } from 'date-fns';
 
+const m = motion as any;
+
 interface Props {
   transactions: Transaction[];
   currency: string;
@@ -28,7 +30,7 @@ const HistoryPage: React.FC<Props> = ({ transactions, currency, onDeleteTransact
   }, [transactions, searchTerm, selectedType]);
 
   return (
-    <motion.div 
+    <m.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -36,13 +38,13 @@ const HistoryPage: React.FC<Props> = ({ transactions, currency, onDeleteTransact
     >
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <motion.button 
+          <m.button 
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate('/')}
             className="w-10 h-10 bg-white rounded-xl soft-shadow flex items-center justify-center text-slate-800"
           >
             <ArrowLeft size={20} />
-          </motion.button>
+          </m.button>
           <div>
             <h2 className="text-xl font-black text-slate-800 tracking-tight">Activity Log</h2>
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Historical Data</p>
@@ -53,7 +55,6 @@ const HistoryPage: React.FC<Props> = ({ transactions, currency, onDeleteTransact
         </button>
       </header>
 
-      {/* Search & Tabs */}
       <div className="space-y-4">
         <div className="relative group">
           <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
@@ -87,7 +88,6 @@ const HistoryPage: React.FC<Props> = ({ transactions, currency, onDeleteTransact
         </div>
       </div>
 
-      {/* List */}
       <div className="space-y-4">
         <AnimatePresence mode="popLayout">
           {filteredTransactions.length > 0 ? (
@@ -100,7 +100,7 @@ const HistoryPage: React.FC<Props> = ({ transactions, currency, onDeleteTransact
               />
             ))
           ) : (
-            <motion.div 
+            <m.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="py-20 text-center"
@@ -109,13 +109,13 @@ const HistoryPage: React.FC<Props> = ({ transactions, currency, onDeleteTransact
                 <Search size={24} />
               </div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No matching results</p>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>
 
       <div className="h-10" />
-    </motion.div>
+    </m.div>
   );
 };
 

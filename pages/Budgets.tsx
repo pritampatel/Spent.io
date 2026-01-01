@@ -9,7 +9,6 @@ import {
   Plus, 
   X, 
   ChevronDown, 
-  ChevronUp,
   History,
   DollarSign,
   TrendingDown,
@@ -18,6 +17,8 @@ import {
 import { Budget, Transaction, CategoryType } from '../types';
 import { CATEGORIES, getCategoryMeta } from '../constants';
 import { format } from 'date-fns';
+
+const m = motion as any;
 
 interface Props {
   transactions: Transaction[];
@@ -32,10 +33,8 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
   const [newCatName, setNewCatName] = useState('');
   const [newCatLimit, setNewCatLimit] = useState('');
   
-  // Fix: Replaced NodeJS.Timeout with any to avoid namespace errors in browser environments
   const longPressTimer = useRef<any>(null);
 
-  // Categories include standard ones + any custom ones created by user
   const allCategories = Array.from(new Set([
     ...Object.keys(CATEGORIES),
     ...budgets.map(b => b.category)
@@ -63,7 +62,6 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
     setIsAddModalOpen(false);
   };
 
-  // Long press handler to initiate budget creation or edit
   const handleTouchStart = (cat: string) => {
     longPressTimer.current = setTimeout(() => {
       setNewCatName(cat);
@@ -81,7 +79,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
   };
 
   return (
-    <motion.div 
+    <m.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
@@ -94,10 +92,10 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
           </div>
           <div>
             <h2 className="text-2xl font-black text-slate-800 tracking-tight">Budgets</h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Strategic Planning</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Strategic Guardrails</p>
           </div>
         </div>
-        <motion.button 
+        <m.button 
           whileTap={{ scale: 0.9 }}
           onClick={() => {
             setNewCatName('');
@@ -107,7 +105,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
           className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-colors"
         >
           <Plus size={24} strokeWidth={3} />
-        </motion.button>
+        </m.button>
       </header>
 
       <div className="space-y-6">
@@ -130,7 +128,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
           const isExpanded = expandedCat === cat;
 
           return (
-            <motion.div 
+            <m.div 
               layout
               key={cat} 
               onMouseDown={() => handleTouchStart(cat)}
@@ -147,7 +145,9 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                     {meta.icon}
                   </div>
                   <div>
-                    <h4 className="font-black text-slate-800 tracking-tight">{cat}</h4>
+                    <h4 className="font-black text-slate-800 tracking-tight flex items-center gap-2">
+                      {cat}
+                    </h4>
                     <div className="mt-1">
                       {isCritical ? (
                         <span className="flex items-center gap-1.5 text-[9px] font-black bg-red-100 text-red-600 px-2.5 py-1 rounded-full uppercase tracking-widest">
@@ -163,7 +163,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                         </span>
                       ) : (
                         <span className="flex items-center gap-1.5 text-[9px] font-black bg-slate-100 text-slate-400 px-2.5 py-1 rounded-full uppercase tracking-widest">
-                          Not Set
+                          No Goal
                         </span>
                       )}
                     </div>
@@ -207,7 +207,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                     </span>
                   </div>
                   <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                    <motion.div 
+                    <m.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${displayPercentage}%`, backgroundColor: statusColor }}
                       transition={{ type: 'spring', damping: 20, stiffness: 100 }}
@@ -218,28 +218,23 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
 
                 <AnimatePresence>
                   {isExpanded && (
-                    <motion.div 
+                    <m.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       className="pt-6 border-t border-slate-50 mt-4 overflow-hidden"
-                      onClick={e => e.stopPropagation()}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-between mb-4 px-1">
                         <div className="flex items-center gap-2">
                           <History size={14} className="text-slate-400" />
-                          <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Recent Activity</h5>
+                          <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Recent Log</h5>
                         </div>
-                        {recent.length > 0 && (
-                          <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-md">
-                            Last {recent.length}
-                          </span>
-                        )}
                       </div>
                       <div className="space-y-3">
                         {recent.length > 0 ? (
                           recent.map(tx => (
-                            <motion.div 
+                            <m.div 
                               initial={{ x: -10, opacity: 0 }}
                               animate={{ x: 0, opacity: 1 }}
                               key={tx.id} 
@@ -250,14 +245,19 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                                   <Clock size={16} />
                                 </div>
                                 <div>
-                                  <p className="text-[12px] font-black text-slate-800 leading-none mb-1">{tx.description}</p>
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase">{format(new Date(tx.date), 'MMMM dd')}</p>
+                                  <p className="text-[12px] font-black text-slate-800 leading-none mb-1.5">{tx.description}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{format(new Date(tx.date), 'MMMM dd')}</p>
+                                    <span className={`px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest border ${tx.type === 'expense' ? 'bg-slate-50 text-slate-400 border-slate-100' : 'bg-emerald-50 text-emerald-500 border-emerald-100'}`}>
+                                      {tx.type}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                               <span className={`text-[12px] font-black ${tx.type === 'expense' ? 'text-slate-900' : 'text-emerald-500'}`}>
                                 {tx.type === 'expense' ? '-' : '+'}{currency}{tx.amount.toLocaleString()}
                               </span>
-                            </motion.div>
+                            </m.div>
                           ))
                         ) : (
                           <div className="text-center py-10 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
@@ -266,31 +266,30 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                           </div>
                         )}
                       </div>
-                    </motion.div>
+                    </m.div>
                   )}
                 </AnimatePresence>
               </div>
-            </motion.div>
+            </m.div>
           );
         })}
       </div>
 
       <div className="text-center opacity-30 px-10">
-        <p className="text-[9px] font-black uppercase tracking-[0.3em]">Tip: Long press any card to edit its limit</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.3em]">Tip: Hold card to adjust limit</p>
       </div>
 
-      {/* Add/Edit Budget Modal */}
       <AnimatePresence>
         {isAddModalOpen && (
           <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
-            <motion.div 
+            <m.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsAddModalOpen(false)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
-            <motion.div 
+            <m.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
@@ -300,7 +299,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
               <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-slate-100 rounded-full" />
               
               <div className="flex items-center justify-between mb-10">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Configure Budget</h3>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Set Budget</h3>
                 <button onClick={() => setIsAddModalOpen(false)} className="p-3 bg-slate-50 rounded-2xl text-slate-400">
                   <X size={22} strokeWidth={3} />
                 </button>
@@ -308,7 +307,7 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
 
               <form onSubmit={handleAddBudget} className="space-y-10">
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Budget Category</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Target Category</label>
                   <input 
                     type="text" 
                     placeholder="e.g. Travel, Gym, Coffee"
@@ -320,10 +319,10 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                 </div>
 
                 <div className="space-y-4 text-center">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block">Monthly Goal Limit</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block">Monthly Limit</label>
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg">
-                      <DollarSign size={28} strokeWidth={2.5} />
+                      <DollarSign size={28} strokeWidth={3} />
                     </div>
                     <input 
                       type="number" 
@@ -337,21 +336,21 @@ const Budgets: React.FC<Props> = ({ transactions, budgets, currency, onUpdateBud
                   </div>
                 </div>
 
-                <motion.button 
+                <m.button 
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.25em] text-sm shadow-2xl shadow-slate-200"
+                  className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.25em] text-sm shadow-2xl"
                 >
-                  Apply Strategy
-                </motion.button>
+                  Deploy Strategy
+                </m.button>
               </form>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
 
       <div className="h-20" />
-    </motion.div>
+    </m.div>
   );
 };
 
