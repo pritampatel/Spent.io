@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
+  AreaChart,
+  Area,
   PieChart, 
   Pie, 
   Cell, 
@@ -9,6 +11,8 @@ import {
   BarChart,
   Bar,
   XAxis, 
+  YAxis,
+  CartesianGrid,
   Tooltip as RechartsTooltip,
 } from 'recharts';
 import { 
@@ -26,7 +30,14 @@ import {
   ArrowRight,
   TestTube2,
   Trash2,
-  Undo2
+  Undo2,
+  Download,
+  Info,
+  TrendingUp,
+  Target,
+  Flame,
+  Globe,
+  Award
 } from 'lucide-react';
 import { format, subDays, isSameDay } from 'date-fns';
 import { Transaction, Budget } from '../types';
@@ -41,21 +52,15 @@ interface Props {
   currency: string;
 }
 
-const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#475569'];
+const CHART_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#475569'];
 
 const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
   const [reportData, setReportData] = useState<any>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const [showInfographic, setShowInfographic] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [isArchitectMode, setIsArchitectMode] = useState(false);
-  const [architectScenarios, setArchitectScenarios] = useState<{name: string, amt: number}[]>([]);
 
   const expenses = useMemo(() => transactions.filter(t => t.type === 'expense'), [transactions]);
-
-  const architectImpact = useMemo(() => {
-    return architectScenarios.reduce((sum, s) => sum + s.amt, 0);
-  }, [architectScenarios]);
 
   const categoryData = useMemo(() => {
     return (Object.keys(CATEGORIES) as Array<keyof typeof CATEGORIES>).map(cat => {
@@ -66,13 +71,17 @@ const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
     }).filter(d => d.value > 0);
   }, [expenses]);
 
-  const weeklyData = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const targetDate = subDays(new Date(), 6 - i);
+  const dailyVelocityData = useMemo(() => {
+    return Array.from({ length: 14 }, (_, i) => {
+      const targetDate = subDays(new Date(), 13 - i);
       const dayTotal = expenses
         .filter(t => isSameDay(new Date(t.date), targetDate))
         .reduce((sum, t) => sum + t.amount, 0);
-      return { day: format(targetDate, 'EEE'), amount: dayTotal };
+      return { 
+        date: format(targetDate, 'MMM dd'), 
+        amount: dayTotal,
+        displayDate: format(targetDate, 'EEE')
+      };
     });
   }, [expenses]);
 
@@ -99,11 +108,13 @@ const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
     if (active && payload && payload.length) {
       return (
         <m.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10"
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="bg-slate-900/95 backdrop-blur-xl text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/10"
         >
-          <p className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">{payload[0].name || payload[0].payload.day}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">
+            {payload[0].payload.name || payload[0].payload.date}
+          </p>
           <p className="text-xl font-black">{currency}{payload[0].value.toLocaleString()}</p>
         </m.div>
       );
@@ -111,69 +122,151 @@ const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
     return null;
   };
 
-  const InfographicMode = () => (
+  const InfographicOverlay = () => (
     <m.div 
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 50 }}
-      className="fixed inset-0 z-[100] bg-white overflow-y-auto no-scrollbar p-8 pb-32"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-slate-950 overflow-y-auto no-scrollbar"
     >
-      <div className="max-w-md mx-auto space-y-16">
-        <header className="flex items-center justify-between">
-          <button onClick={() => setShowInfographic(false)} className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
-            <Undo2 size={14} /> Back
-          </button>
-          <button className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-white">
-            <Share2 size={18} />
-          </button>
+      {/* Background Polish */}
+      <div className="absolute top-0 right-0 w-full h-[600px] bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-transparent pointer-events-none" />
+      <div className="absolute top-[20%] left-[-10%] w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full" />
+      
+      <div className="max-w-md mx-auto p-8 space-y-10 pb-32 relative">
+        <header className="flex items-center justify-between sticky top-0 z-10 py-4 bg-slate-950/80 backdrop-blur-md -mx-8 px-8 border-b border-white/5">
+          <m.button 
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowInfographic(false)} 
+            className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-white/60 border border-white/10"
+          >
+            <Undo2 size={20} />
+          </m.button>
+          <h2 className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Intelligence Briefing</h2>
+          <m.button 
+            whileTap={{ scale: 0.9 }}
+            className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg"
+          >
+            <Download size={18} />
+          </m.button>
         </header>
 
-        <div className="space-y-4 text-center">
-          <h2 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.5em]">Annualized Intelligence</h2>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter leading-none">Wealth Digest.</h1>
-          <p className="text-slate-400 text-xs font-black uppercase tracking-widest">{format(new Date(), 'MMMM yyyy')}</p>
+        {/* Title Section */}
+        <div className="space-y-4 pt-4">
+          <m.div 
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/20"
+          >
+            <Sparkles size={12} className="text-indigo-400" />
+            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Premium Intelligence Report</span>
+          </m.div>
+          <h1 className="text-6xl font-black text-white tracking-tighter leading-[0.85] uppercase">Wealth <br/><span className="text-indigo-500">Report.</span></h1>
+          <div className="flex items-center gap-4 text-white/40 text-[11px] font-black uppercase tracking-[0.2em]">
+            <span>{format(new Date(), 'MMMM yyyy')}</span>
+            <div className="w-1 h-1 bg-white/20 rounded-full" />
+            <span>ID: #S-8821</span>
+          </div>
         </div>
 
-        <section className="bg-slate-900 text-white rounded-[3.5rem] p-12 space-y-10 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500 blur-[100px] opacity-20 -translate-y-10 translate-x-10" />
-          <div className="space-y-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Executive Score</h3>
-            <h2 className="text-8xl font-black tracking-tighter leading-none">{reportData?.score || 82}</h2>
+        {/* Hero Score Card - Bento Style */}
+        <section className="grid grid-cols-2 gap-4">
+          <div className="col-span-2 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[2.5rem] p-8 space-y-8 relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 blur-3xl rounded-full translate-x-10 -translate-y-10" />
+            <div className="relative z-10">
+              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white/60 mb-2">Portfolio Health</h3>
+              <div className="flex items-baseline gap-2">
+                <span className="text-8xl font-black text-white tracking-tighter leading-none">{reportData?.score || 85}</span>
+                <span className="text-2xl font-black text-white/40">/100</span>
+              </div>
+            </div>
+            <div className="relative z-10 flex items-center gap-4 p-4 bg-black/20 backdrop-blur-md rounded-2xl border border-white/10">
+              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                <Zap size={18} className="text-amber-400 fill-amber-400" />
+              </div>
+              <p className="text-[11px] font-bold text-white/90 leading-tight">
+                {reportData?.prediction || "Scanning your spending velocity for future projections..."}
+              </p>
+            </div>
           </div>
-          <p className="text-sm font-bold text-slate-300 leading-relaxed italic border-l-2 border-indigo-500 pl-6">
-            "{reportData?.prediction || "Maintaining current velocity will ensure target savings are reached by month-end with minimal adjustments."}"
-          </p>
+
+          <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 space-y-4">
+            <Activity size={20} className="text-indigo-400" />
+            <div>
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Efficiency</p>
+              <p className="text-2xl font-black text-white">94.2%</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 border border-white/10 rounded-[2.5rem] p-6 space-y-4">
+            <Target size={20} className="text-emerald-400" />
+            <div>
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Stability</p>
+              <p className="text-2xl font-black text-white">Stable</p>
+            </div>
+          </div>
         </section>
 
-        <section className="space-y-6">
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight px-2">High-Impact Facts</h3>
-          <div className="grid grid-cols-1 gap-4">
+        {/* Key Performance Indicators */}
+        <section className="space-y-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 px-2">Key Findings</h3>
+          <div className="space-y-3">
             {reportData?.stats?.map((stat: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</span>
-                <span className="text-xl font-black text-slate-900">{stat.value}</span>
-              </div>
+              <m.div 
+                key={i}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="flex items-center justify-between p-7 bg-white/5 rounded-[2rem] border border-white/5"
+              >
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">{stat.label}</span>
+                  <p className="text-xl font-black text-white">{stat.value}</p>
+                </div>
+                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10">
+                   <ArrowUpRight size={20} className="text-indigo-400" />
+                </div>
+              </m.div>
             ))}
           </div>
         </section>
 
-        <section className="space-y-8 bg-indigo-50 rounded-[3.5rem] p-10 border border-indigo-100">
-          <div className="flex items-center gap-3">
-            <Sparkles size={24} className="text-indigo-600" />
-            <h3 className="text-xl font-black text-indigo-900 tracking-tight">Strategic Steps</h3>
+        {/* AI Strategic Intelligence */}
+        <section className="bg-white rounded-[3rem] p-8 space-y-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full" />
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
+              <BrainCircuit size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">AI Strategy</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Intelligence Hub</p>
+            </div>
           </div>
-          <div className="space-y-6">
+          
+          <div className="space-y-6 relative z-10">
             {reportData?.insights?.map((insight: any, i: number) => (
-              <div key={i} className="flex gap-6">
-                <span className="text-3xl font-black text-indigo-200">{i + 1}</span>
-                <p className="text-sm font-bold text-indigo-900/70 leading-relaxed">{insight.text}</p>
+              <div key={i} className="flex gap-5 border-b border-slate-100 pb-6 last:border-0 last:pb-0">
+                <div className="flex-shrink-0 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-black text-slate-400">
+                  0{i + 1}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${insight.priority === 'High' ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                      {insight.priority} Priority
+                    </span>
+                  </div>
+                  <p className="text-[14px] font-bold text-slate-700 leading-relaxed">{insight.text}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        <div className="text-center pt-20 border-t border-slate-100">
-           <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em]">The Spent Intelligence Core v4.0</p>
+        {/* Footer Branding */}
+        <div className="text-center pt-10 pb-10 opacity-30">
+          <p className="text-[10px] font-black text-white uppercase tracking-[0.5em]">Spent.io Intelligence Lab</p>
+          <p className="text-[8px] font-bold text-white/50 uppercase tracking-widest mt-2">© 2024 Intelligent Financial Services</p>
         </div>
       </div>
     </m.div>
@@ -183,183 +276,226 @@ const Analysis: React.FC<Props> = ({ transactions, budgets, currency }) => {
     <m.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="px-6 py-4 space-y-10"
+      className="px-6 py-6 space-y-8 pb-32"
     >
       <AnimatePresence>
-        {showInfographic && <InfographicMode key="infographic" />}
+        {showInfographic && <InfographicOverlay key="infographic" />}
       </AnimatePresence>
 
+      {/* Hero Header */}
       <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Intelligence</h2>
-          <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Data-Driven Future</p>
+        <div className="space-y-1">
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">Portfolio<br/><span className="text-indigo-600">Insights</span></h2>
+          <div className="flex items-center gap-2">
+             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">AI Live Sync Active</p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <m.button 
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsArchitectMode(!isArchitectMode)}
-            className={`p-3.5 rounded-[1.25rem] shadow-xl flex items-center gap-2 transition-colors ${isArchitectMode ? 'bg-amber-500 text-white' : 'bg-white text-slate-400'}`}
-          >
-            <TestTube2 size={20} />
-          </m.button>
-          <m.button 
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setShowInfographic(true)}
-            className="p-3.5 bg-slate-900 text-white rounded-[1.25rem] shadow-xl flex items-center gap-2"
-          >
-            <FileText size={20} />
-          </m.button>
-        </div>
+        <m.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowInfographic(true)}
+          className="w-16 h-16 bg-slate-900 text-white rounded-[1.75rem] shadow-2xl flex items-center justify-center relative overflow-hidden group"
+        >
+          <div className="absolute inset-0 bg-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+          <FileText size={24} className="relative z-10" />
+        </m.button>
       </header>
 
-      <AnimatePresence>
-        {isArchitectMode && (
-          <m.section 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="bg-slate-900 rounded-[3rem] p-8 space-y-8 overflow-hidden relative"
-          >
-             <div className="absolute top-0 right-0 p-4 opacity-20"><BrainCircuit size={48} className="text-amber-500" /></div>
-             <div className="space-y-1 relative z-10">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Scenario Architect</h4>
-               <p className="text-sm font-bold text-slate-100">Simulate potential future expenses to see impact.</p>
-             </div>
-
-             <div className="space-y-4">
-               {architectScenarios.map((s, i) => (
-                 <div key={i} className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10">
-                   <div className="flex flex-col">
-                     <span className="text-[11px] font-black text-white">{s.name}</span>
-                     <span className="text-[9px] font-black text-slate-500 uppercase">Impact: High</span>
-                   </div>
-                   <div className="flex items-center gap-4">
-                     <span className="text-sm font-black text-amber-500">-{currency}{s.amt.toLocaleString()}</span>
-                     <button onClick={() => setArchitectScenarios(prev => prev.filter((_, idx) => idx !== i))}>
-                        <Trash2 size={16} className="text-red-400" />
-                     </button>
-                   </div>
-                 </div>
-               ))}
-               <button 
-                onClick={() => setArchitectScenarios(prev => [...prev, {name: 'Simulation Asset', amt: 500}])}
-                className="w-full py-4 border-2 border-dashed border-white/20 rounded-2xl text-white/40 text-[10px] font-black uppercase tracking-widest hover:border-amber-500/50 hover:text-amber-500 transition-colors"
-               >
-                 + Draft Potential Expense
-               </button>
-             </div>
-
-             {architectImpact > 0 && (
-               <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                 <span className="text-[10px] font-black uppercase text-slate-400">Projected Health Score Shift</span>
-                 <span className="text-2xl font-black text-red-500">-{Math.round(architectImpact / 100)} pts</span>
-               </div>
-             )}
-          </m.section>
-        )}
-      </AnimatePresence>
-
-      <section className="bg-white rounded-[3.5rem] p-10 soft-shadow border border-slate-50 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-[80px] -translate-x-10 translate-y-10 group-hover:scale-110 transition-transform duration-1000" />
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="text-center mb-10">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">Wealth Efficiency Score</h4>
-            <div className="flex items-baseline justify-center gap-2">
-              <h1 className="text-7xl font-black text-slate-900 tracking-tighter">
-                {Math.max(0, (reportData?.score || 82) - Math.round(architectImpact / 100))}
-              </h1>
-              <div className="flex flex-col items-start">
-                 <span className={`${architectImpact > 0 ? 'text-red-500' : 'text-emerald-500'} font-black text-sm flex items-center gap-0.5`}>
-                   {architectImpact > 0 ? '-' : '+'}{architectImpact > 0 ? Math.round(architectImpact / 100) : '4'}%
-                 </span>
-                 <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Real-time</span>
-              </div>
+      {/* Efficiency Score Card */}
+      <section className="bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50/50 rounded-full blur-[100px] translate-x-20 -translate-y-20 group-hover:scale-110 transition-transform duration-1000" />
+        
+        <div className="relative z-10 space-y-10">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Wealth Score</h4>
+              <m.h1 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-8xl font-black text-slate-900 tracking-tighter leading-none"
+              >
+                {reportData?.score || 85}
+              </m.h1>
+            </div>
+            <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+               <Award size={28} />
             </div>
           </div>
 
-          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner mb-6 border border-slate-50">
-            <m.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.max(0, (reportData?.score || 82) - Math.round(architectImpact / 100))}%` }}
-              className={`h-full ${architectImpact > 0 ? 'bg-amber-500' : 'bg-indigo-600'} rounded-full transition-colors`}
-            />
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
-            <Zap size={14} className="text-indigo-600 fill-current" />
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-              {architectImpact > 0 ? 'Simulation: Impact Projected' : 'Status: Optimal'}
-            </p>
+          <div className="space-y-4">
+             <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden p-1 border border-slate-50 shadow-inner">
+                <m.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${reportData?.score || 85}%` }}
+                  className="h-full bg-indigo-600 rounded-full relative overflow-hidden"
+                >
+                  <m.div 
+                    animate={{ x: ['-100%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                  />
+                </m.div>
+             </div>
+             <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Global Ranking</span>
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Top 15%</span>
+             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50 group">
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-1">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Distribution</h4>
-              <p className="text-lg font-black text-slate-900 tracking-tight">Category Mix</p>
-            </div>
-            <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:scale-110 transition-transform">
-              <Layers size={20} />
-            </div>
-          </div>
-          <div className="h-64 relative">
-             <ResponsiveContainer width="100%" height="100%">
-               <PieChart>
-                 <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={95}
-                    paddingAngle={8}
-                    dataKey="value"
-                    onMouseEnter={(_, i) => setActiveIndex(i)}
-                    onMouseLeave={() => setActiveIndex(null)}
-                    stroke="none"
-                 >
-                   {categoryData.map((_, index) => (
-                     <Cell 
-                        key={`cell-${index}`} 
-                        fill={CHART_COLORS[index % CHART_COLORS.length]} 
-                        opacity={activeIndex === null || activeIndex === index ? 1 : 0.4}
-                      />
-                   ))}
-                 </Pie>
-                 <RechartsTooltip content={<CustomTooltip />} />
-               </PieChart>
-             </ResponsiveContainer>
-             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Diversity</span>
-               <span className="text-2xl font-black text-slate-900">{categoryData.length} Cats</span>
-             </div>
-          </div>
+      {/* AI Intelligence Deck */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+           <div className="flex items-center gap-2">
+             <Sparkles size={18} className="text-indigo-600" />
+             <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Strategic Intelligence</h3>
+           </div>
+           <m.button 
+             whileTap={{ scale: 0.9 }}
+             onClick={fetchAI} 
+             disabled={loadingAI} 
+             className={`p-2 bg-indigo-50 text-indigo-600 rounded-xl transition-all ${loadingAI ? 'opacity-50' : ''}`}
+           >
+             <BrainCircuit size={18} className={loadingAI ? 'animate-spin' : ''} />
+           </m.button>
         </div>
 
-        <div className="bg-slate-50 rounded-[3rem] p-10 border border-slate-100 group">
-          <div className="flex items-center justify-between mb-10">
+        <div className="space-y-4">
+          <AnimatePresence mode="wait">
+            {reportData?.insights?.map((insight: any, i: number) => (
+              <m.div 
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white rounded-[2.25rem] p-7 border border-slate-50 soft-shadow group hover:border-indigo-100 transition-all cursor-pointer"
+              >
+                <div className="flex items-start gap-5">
+                  <div className="w-14 h-14 bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-white shrink-0 group-hover:scale-110 transition-transform">
+                    {i === 0 ? <Zap size={22} className="text-amber-400" /> : i === 1 ? <Target size={22} className="text-emerald-400" /> : <Flame size={22} className="text-orange-400" />}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                       <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${insight.priority === 'High' ? 'bg-red-50 text-red-500' : 'bg-indigo-50 text-indigo-500'}`}>
+                          {insight.priority} Impact
+                       </span>
+                    </div>
+                    <p className="text-[14px] font-bold text-slate-700 leading-tight">{insight.text}</p>
+                  </div>
+                </div>
+              </m.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </section>
+
+      {/* Visual Data Grids */}
+      <section className="space-y-8">
+        <div className="bg-slate-950 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[80px]" />
+          
+          <div className="flex items-center justify-between mb-10 relative z-10">
             <div className="space-y-1">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Velocity</h4>
-              <p className="text-lg font-black text-slate-900 tracking-tight">Last 7 Days</p>
+              <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Velocity</h4>
+              <p className="text-xl font-black text-white tracking-tight">Daily Burn Rate</p>
             </div>
-            <div className="p-3 bg-white rounded-2xl text-slate-400 shadow-sm">
-              <Activity size={20} />
+            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-white/40 border border-white/10">
+              <TrendingUp size={20} />
             </div>
           </div>
-          <div className="h-48 w-full">
+
+          <div className="h-60 w-full relative z-10 -mx-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#cbd5e1' }} dy={10} />
-                <Bar dataKey="amount" fill="#0f172a" radius={[12, 12, 12, 12]} barSize={22} />
-                <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#e2e8f0', radius: 12 }} />
-              </BarChart>
+              <AreaChart data={dailyVelocityData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="velocityGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <Area 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#6366f1" 
+                  strokeWidth={5}
+                  fillOpacity={1} 
+                  fill="url(#velocityGrad)" 
+                  animationDuration={1500}
+                />
+                <XAxis 
+                  dataKey="displayDate" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 900, fill: '#475569' }} 
+                  dy={15}
+                />
+                <RechartsTooltip content={<CustomTooltip />} cursor={{ stroke: '#334155', strokeWidth: 2 }} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
-      </section>
 
-      <div className="h-20" />
+        <div className="bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50">
+          <div className="flex items-center justify-between mb-10">
+            <div className="space-y-1">
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Composition</h4>
+              <p className="text-xl font-black text-slate-900 tracking-tight">Category Mix</p>
+            </div>
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+              <Layers size={20} />
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center gap-10">
+             <div className="h-72 w-full relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={85}
+                      outerRadius={115}
+                      paddingAngle={6}
+                      dataKey="value"
+                      onMouseEnter={(_, i) => setActiveIndex(i)}
+                      onMouseLeave={() => setActiveIndex(null)}
+                      stroke="none"
+                    >
+                      {categoryData.map((_, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                          opacity={activeIndex === null || activeIndex === index ? 1 : 0.4}
+                          className="outline-none"
+                        />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                   <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Diversity</span>
+                   <span className="text-4xl font-black text-slate-900 tracking-tighter">{categoryData.length}</span>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4 w-full">
+                {categoryData.slice(0, 4).map((d, i) => (
+                  <div key={i} className="flex items-center gap-4 p-5 bg-slate-50 rounded-[1.75rem] border border-slate-100">
+                     <div className="w-2.5 h-10 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                     <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{d.name}</p>
+                        <p className="text-sm font-black text-slate-800">{currency}{d.value.toLocaleString()}</p>
+                     </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        </div>
+      </section>
     </m.div>
   );
 };

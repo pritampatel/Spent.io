@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Check, DollarSign } from 'lucide-react';
+import { X, Check, DollarSign, Wallet, CreditCard } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CategoryType, Transaction } from '../types';
 import { CATEGORIES } from '../constants';
@@ -36,48 +36,48 @@ const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[12px]"
+            className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl"
           />
           <m.div
-            initial={{ y: '100%', opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="relative w-full max-w-md bg-white rounded-t-[3.5rem] p-10 shadow-[0_-20px_100px_rgba(0,0,0,0.1)] max-h-[92vh] overflow-y-auto no-scrollbar"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="relative w-full max-w-md bg-white rounded-t-[4rem] p-10 shadow-2xl max-h-[95vh] overflow-y-auto no-scrollbar"
           >
             <div className="absolute top-4 left-1/2 -translate-x-1/2 w-14 h-1.5 bg-slate-100 rounded-full" />
 
             <div className="flex items-center justify-between mb-12">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Add Transaction</h3>
+              <h3 className="text-3xl font-black text-slate-900 tracking-tighter">New Entry</h3>
               <m.button
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose} 
-                className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-slate-900"
+                className="p-3 bg-slate-950 text-white rounded-2xl shadow-xl"
               >
-                <X size={22} strokeWidth={2.5} />
+                <X size={20} strokeWidth={3} />
               </m.button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-10">
-              <div className="flex bg-slate-50 p-2 rounded-[2.5rem] border border-slate-100 shadow-inner">
+            <form onSubmit={handleSubmit} className="space-y-12">
+              {/* Type Switch */}
+              <div className="flex bg-slate-50 p-2 rounded-[2.5rem] border border-slate-100">
                 {(['expense', 'income'] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setType(t)}
-                    className={`flex-1 py-4 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] transition-all relative ${type === t ? 'text-slate-900' : 'text-slate-400'}`}
+                    className={`flex-1 py-4 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] transition-all relative ${type === t ? 'text-white' : 'text-slate-400'}`}
                   >
                     {type === t && (
                       <m.div
-                        layoutId="type-bg" 
-                        className="absolute inset-0 bg-white rounded-[2rem] shadow-lg border border-slate-100" 
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        layoutId="type-active" 
+                        className="absolute inset-0 bg-slate-950 rounded-[2rem] shadow-xl" 
                       />
                     )}
                     <span className="relative z-10">{t}</span>
@@ -85,10 +85,11 @@ const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
                 ))}
               </div>
 
-              <div className="text-center group">
-                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 block mb-6">Portfolio Impact</label>
-                <div className="flex items-center justify-center gap-3">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white transition-colors shadow-lg ${type === 'expense' ? 'bg-orange-500' : 'bg-emerald-500'}`}>
+              {/* Amount Input */}
+              <div className="text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 mb-6">Capital Flow</p>
+                <div className="flex items-center justify-center gap-2">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl ${type === 'expense' ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
                     <DollarSign size={28} strokeWidth={3} />
                   </div>
                   <input 
@@ -97,36 +98,44 @@ const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-56 bg-transparent border-none text-6xl font-black text-slate-900 placeholder:text-slate-50 focus:ring-0 text-center tracking-tighter"
+                    className="w-56 bg-transparent border-none text-7xl font-black text-slate-950 placeholder:text-slate-100 focus:ring-0 text-center tracking-tighter"
                   />
                 </div>
               </div>
 
+              {/* Description */}
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Detailed Description</label>
+                <div className="flex items-center gap-3 ml-4">
+                   <CreditCard size={14} className="text-slate-400" />
+                   <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Ledger Description</label>
+                </div>
                 <input 
                   type="text"
-                  placeholder="Where did the money go?"
+                  placeholder="Detail the transaction..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-8 py-5 bg-slate-50 border-2 border-transparent rounded-[2rem] text-base font-bold text-slate-800 focus:bg-white focus:border-indigo-100 focus:shadow-xl focus:shadow-indigo-50/50 transition-all outline-none"
+                  className="w-full px-8 py-6 bg-slate-50 border-2 border-transparent rounded-[2.25rem] text-lg font-bold text-slate-900 focus:bg-white focus:border-indigo-100 transition-all outline-none"
                 />
               </div>
 
+              {/* Categories */}
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Select Category</label>
+                <div className="flex items-center gap-3 ml-4">
+                   <Wallet size={14} className="text-slate-400" />
+                   <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Classify Category</label>
+                </div>
                 <div className="grid grid-cols-4 gap-4">
                   {(Object.keys(CATEGORIES) as CategoryType[]).map((cat) => (
                     <button
                       key={cat}
                       type="button"
                       onClick={() => setCategory(cat)}
-                      className={`flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all ${category === cat ? 'border-indigo-500 bg-indigo-50 shadow-inner' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
+                      className={`flex flex-col items-center justify-center p-5 rounded-[2rem] border-2 transition-all ${category === cat ? 'border-indigo-600 bg-indigo-50 shadow-inner' : 'border-slate-50 bg-slate-50'}`}
                     >
-                      <div className={`p-3.5 rounded-2xl mb-2.5 transition-all ${category === cat ? 'scale-110 shadow-xl ' + CATEGORIES[cat].color : 'opacity-50'}`}>
-                        {React.cloneElement(CATEGORIES[cat].icon as React.ReactElement<any>, { size: 20 })}
+                      <div className={`p-3 rounded-2xl mb-2 transition-transform ${category === cat ? 'scale-110 ' + CATEGORIES[cat].color : 'opacity-30'}`}>
+                        {React.cloneElement(CATEGORIES[cat].icon as React.ReactElement<any>, { size: 18, strokeWidth: 3 })}
                       </div>
-                      <span className={`text-[9px] font-black uppercase tracking-tighter truncate w-full text-center ${category === cat ? 'text-indigo-600' : 'text-slate-400'}`}>
+                      <span className={`text-[8px] font-black uppercase tracking-widest truncate w-full text-center ${category === cat ? 'text-indigo-600' : 'text-slate-300'}`}>
                         {cat}
                       </span>
                     </button>
@@ -137,11 +146,11 @@ const AddTransactionModal: React.FC<Props> = ({ isOpen, onClose, onAdd }) => {
               <m.button
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.25em] text-sm shadow-2xl shadow-indigo-100 flex items-center justify-center gap-4 group"
+                className="w-full py-7 bg-slate-950 text-white rounded-[2.5rem] font-black uppercase tracking-[0.3em] text-xs shadow-2xl flex items-center justify-center gap-4 group"
               >
-                Confirm Entry
-                <div className="w-7 h-7 bg-white/15 rounded-full flex items-center justify-center group-hover:bg-white/25 transition-colors">
-                  <Check size={16} strokeWidth={3} />
+                Secure Entry
+                <div className="w-7 h-7 bg-white/10 rounded-full flex items-center justify-center">
+                   <Check size={16} strokeWidth={3} />
                 </div>
               </m.button>
             </form>

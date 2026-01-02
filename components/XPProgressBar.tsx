@@ -18,53 +18,44 @@ const XPProgressBar: React.FC<Props> = ({ xp, level }) => {
 
   useEffect(() => {
     if (xp > prevXp) {
-      // Pulse animation when XP increases
       controls.start({
-        scale: [1, 1.03, 1],
-        boxShadow: [
-          "0 0 0px rgba(99, 102, 241, 0)",
-          "0 0 20px rgba(99, 102, 241, 0.4)",
-          "0 0 0px rgba(99, 102, 241, 0)"
-        ],
-        transition: { duration: 0.4, ease: "easeOut" }
+        scale: [1, 1.1, 1],
+        transition: { duration: 0.3 }
       });
       setPrevXp(xp);
     }
   }, [xp, prevXp, controls]);
 
   return (
-    <div className="w-full px-6 py-2">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+    <div className="w-full px-5 py-0.5">
+      <div className="flex items-center justify-between mb-0.5">
+        <div className="flex items-center gap-1">
           <m.div 
             animate={controls}
-            className="w-6 h-6 bg-amber-500 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/20"
+            className="w-3.5 h-3.5 bg-amber-500 rounded flex items-center justify-center"
           >
-            <Star size={14} className="text-white fill-current" />
+            <Star size={8} className="text-white fill-current" />
           </m.div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Level {level}</span>
+          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Level {level}</span>
         </div>
-        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">
+        <span className="text-[7px] font-black text-indigo-600 uppercase tracking-widest">
           {Math.floor(xp % xpForNextLevel)} / {xpForNextLevel} XP
         </span>
       </div>
-      <m.div 
-        animate={controls}
-        className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/50 shadow-inner relative"
-      >
+      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden p-[1px] border border-slate-200/50 relative">
         <m.div 
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ type: 'spring', damping: 20, stiffness: 60 }}
-          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] rounded-full relative overflow-hidden"
+          className="h-full bg-indigo-500 rounded-full relative overflow-hidden"
         >
           <m.div 
             animate={{ x: ['-100%', '100%'] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
           />
         </m.div>
-      </m.div>
+      </div>
     </div>
   );
 };

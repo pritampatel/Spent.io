@@ -5,14 +5,11 @@ import {
   LayoutGrid, 
   PieChart as PieChartIcon, 
   Plus, 
-  Target, 
   History as HistoryIcon,
   Settings2,
-  FlaskConical,
   CloudLightning,
   Trophy,
-  Sparkles,
-  Zap
+  Sparkles
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -20,7 +17,6 @@ import Home from './pages/Home';
 import Analysis from './pages/Analysis';
 import ProfilePage from './pages/Profile';
 import HistoryPage from './pages/History';
-import GoalsPage from './pages/Goals';
 import BudgetsPage from './pages/Budgets';
 import RewardsHub from './pages/RewardsHub';
 import AddTransactionModal from './components/AddTransactionModal';
@@ -49,12 +45,12 @@ const NavItem: React.FC<{ item: any }> = ({ item }) => {
         initial={false}
         animate={{
           scale: isActive ? 1.15 : 1,
-          y: isActive ? -4 : 0,
+          y: isActive ? -2 : 0,
         }}
         className={`flex flex-col items-center justify-center transition-colors duration-300 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}
       >
-        <div className={`p-2.5 rounded-2xl transition-all duration-300 relative ${isActive ? 'bg-indigo-50 shadow-inner' : 'bg-transparent'}`}>
-          <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+        <div className={`p-2.5 rounded-xl transition-all duration-300 relative ${isActive ? 'bg-indigo-50 shadow-inner' : 'bg-transparent'}`}>
+          <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
         </div>
       </m.div>
     </NavLink>
@@ -67,11 +63,10 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [triggerFlyingXP, setTriggerFlyingXP] = useState(false);
   const [flyingXPSource, setFlyingXPSource] = useState<{x: number, y: number} | undefined>(undefined);
-  const [achievementMessage, setAchievementMessage] = useState<string | null>(null);
-  const [achievementSub, setAchievementSub] = useState<string | null>(null);
+  const [notifContent, setNotifContent] = useState<{title: string, sub: string} | null>(null);
   
   const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('spent_io_state_v6');
+    const saved = localStorage.getItem('spent_io_state_v7');
     if (saved) return JSON.parse(saved);
     return {
       transactions: MOCK_TRANSACTIONS('1'),
@@ -86,30 +81,29 @@ const App: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('spent_io_state_v6', JSON.stringify(state));
+    localStorage.setItem('spent_io_state_v7', JSON.stringify(state));
   }, [state]);
 
-  // Handle Login Sequence
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitializing(false);
-      
-      // Perform an Initial Sync after splash
-      setIsSyncing(true);
-      setTimeout(() => {
-        setIsSyncing(false);
-        // Daily login reward sequence
-        addXP(150, "Daily Reward Unlocked!", "You've earned +150 XP for starting your day with Spent.io.");
-      }, 1500);
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Auto-hide notification
+  useEffect(() => {
+    if (showNotification) {
+      const timer = setTimeout(() => setShowNotification(false), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [showNotification]);
 
   const activeProfile = useMemo(() => 
     state.profiles.find(p => p.id === state.activeProfileId) || state.profiles[0], 
   [state]);
 
-  const addXP = (amount: number, message?: string, subMessage?: string, sourceX?: number, sourceY?: number) => {
+  const addXP = (amount: number, message?: string, sub?: string, sourceX?: number, sourceY?: number) => {
     if (sourceX && sourceY) {
       setFlyingXPSource({ x: sourceX, y: sourceY });
     } else {
@@ -118,8 +112,7 @@ const App: React.FC = () => {
     
     setTriggerFlyingXP(true);
     if (message) {
-      setAchievementMessage(message);
-      setAchievementSub(subMessage || null);
+      setNotifContent({ title: message, sub: sub || `+${amount} XP Gained` });
       setShowNotification(true);
     }
     
@@ -130,8 +123,8 @@ const App: React.FC = () => {
           const newLevel = Math.floor(newXP / 1000) + 1;
           if (newLevel > p.level) {
             sounds.playLevelUp();
-            setAchievementMessage(`LEVEL UP! REACHED LEVEL ${newLevel}`);
-            setAchievementSub("You're a financial legend now!");
+            setNotifContent({ title: `RANK ASCENDED!`, sub: `Reached Level ${newLevel}` });
+            setShowNotification(true);
           } else {
             sounds.playReward();
           }
@@ -156,42 +149,34 @@ const App: React.FC = () => {
         ...prev,
         transactions: [transaction, ...prev.transactions]
       }));
-      addXP(50, "Transaction Logged!", "Maintaining discipline yields +50 XP");
+      addXP(50, "Data Point Encrypted", "+50 XP added to vault");
       setIsSyncing(false);
       setIsAddModalOpen(false);
-    }, 1200);
-  };
-
-  const handleDeleteTransaction = (id: string) => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setState(p => ({...p, transactions: p.transactions.filter(t => t.id !== id)}));
-      setIsSyncing(false);
-    }, 800);
+    }, 1500);
   };
 
   const handleUpdateBudget = (cat: CategoryType, limit: number) => {
-    setIsSyncing(true);
-    setTimeout(() => {
-      setState(prev => {
-        const existingIdx = prev.budgets.findIndex(b => b.category === cat && b.profileId === prev.activeProfileId);
-        const newBudgets = [...prev.budgets];
-        if (existingIdx > -1) {
-          newBudgets[existingIdx] = { ...newBudgets[existingIdx], limit };
-        } else {
-          newBudgets.push({ id: Math.random().toString(), category: cat, limit, profileId: prev.activeProfileId });
-        }
-        return { ...prev, budgets: newBudgets };
-      });
-      addXP(100, "Strategy Updated!", "New financial boundaries set. +100 XP");
-      setIsSyncing(false);
-    }, 1000);
+    setState(prev => {
+      const existingIdx = prev.budgets.findIndex(b => b.category === cat && b.profileId === prev.activeProfileId);
+      const newBudgets = [...prev.budgets];
+      if (existingIdx > -1) {
+        newBudgets[existingIdx] = { ...newBudgets[existingIdx], limit };
+      } else {
+        newBudgets.push({ id: Math.random().toString(), category: cat, limit, profileId: prev.activeProfileId });
+      }
+      return { ...prev, budgets: newBudgets };
+    });
+    addXP(100, "Strategy Updated", "Budget parameters locked +100 XP");
   };
 
   const handleSwitchProfile = (id: string) => {
     setIsSyncing(true);
     setState(prev => ({ ...prev, activeProfileId: id }));
     setTimeout(() => setIsSyncing(false), 1200);
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    setState(p => ({...p, transactions: p.transactions.filter(t => t.id !== id)}));
   };
 
   return (
@@ -204,8 +189,8 @@ const App: React.FC = () => {
         <NotificationToast 
           isVisible={showNotification} 
           onClose={() => setShowNotification(false)} 
-          message={achievementMessage}
-          subMessage={achievementSub}
+          message={notifContent?.title}
+          subtitle={notifContent?.sub}
         />
         
         <FlyingXP 
@@ -216,30 +201,27 @@ const App: React.FC = () => {
         />
 
         {!isInitializing && (
-          <div className="pt-8 pb-2 space-y-2 z-10 shrink-0">
-            <header className="px-6 flex items-center justify-between">
-              <m.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3.5">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 rounded-2xl" />
-                  <img src={activeProfile.avatar} alt="Profile" className="relative w-11 h-11 rounded-2xl object-cover border-2 border-white shadow-xl" />
-                </div>
+          <div className="pt-6 pb-2 space-y-1 z-10 shrink-0">
+            <header className="px-5 flex items-center justify-between">
+              <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2.5">
+                <img src={activeProfile.avatar} alt="Profile" className="w-9 h-9 rounded-lg object-cover border-2 border-white shadow-md" />
                 <div>
-                  <h2 className="text-sm font-black text-slate-900 tracking-tight">{activeProfile.name}</h2>
-                  <div className="flex items-center gap-1.5">
-                    <CloudLightning size={10} className={isSyncing ? "text-indigo-600 animate-pulse" : "text-slate-300"} />
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                      {isSyncing ? "Cloud Syncing..." : "Ready"}
+                  <h2 className="text-[11px] font-black text-slate-900 tracking-tight leading-none mb-0.5">{activeProfile.name}</h2>
+                  <div className="flex items-center gap-1 opacity-60">
+                    <CloudLightning size={8} className={isSyncing ? "text-indigo-600 animate-pulse" : "text-emerald-500"} />
+                    <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none">
+                      {isSyncing ? "Syncing" : "Active"}
                     </span>
                   </div>
                 </div>
               </m.div>
-              <div className="flex items-center gap-2">
-                <NavLink to="/rewards" className="p-2 bg-indigo-50 text-indigo-600 rounded-xl flex items-center gap-1.5 border border-indigo-100 shadow-sm hover:shadow-md transition-shadow">
-                  <Trophy size={14} className="fill-current" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{activeProfile.level}</span>
+              <div className="flex items-center gap-1.5">
+                <NavLink to="/rewards" className="px-2.5 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg flex items-center gap-1.5 border border-indigo-100/50">
+                  <Trophy size={12} />
+                  <span className="text-[9px] font-black">{activeProfile.level}</span>
                 </NavLink>
-                <NavLink to="/profile" className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg flex items-center gap-2">
-                  <Settings2 size={16} />
+                <NavLink to="/profile" className="p-2 bg-slate-900 text-white rounded-lg">
+                  <Settings2 size={14} />
                 </NavLink>
               </div>
             </header>
@@ -265,54 +247,53 @@ const App: React.FC = () => {
                 <Route path="/analysis" element={<Analysis 
                   transactions={state.transactions.filter(t => t.profileId === state.activeProfileId)}
                   budgets={state.budgets.filter(b => b.profileId === state.activeProfileId)}
-                  currency={activeProfile.currency}
+                  currency={activeProfile.settings.currency}
                 />} />
                 <Route path="/budgets" element={<BudgetsPage 
                   transactions={state.transactions.filter(t => t.profileId === state.activeProfileId)}
                   budgets={state.budgets.filter(b => b.profileId === state.activeProfileId)}
-                  currency={activeProfile.currency}
+                  currency={activeProfile.settings.currency}
                   onUpdateBudget={handleUpdateBudget}
                 />} />
                 <Route path="/history" element={<HistoryPage 
                   transactions={state.transactions.filter(t => t.profileId === state.activeProfileId)}
-                  currency={activeProfile.currency}
+                  currency={activeProfile.settings.currency}
                   onDeleteTransaction={handleDeleteTransaction}
                 />} />
-                <Route path="/goals" element={<GoalsPage currency={activeProfile.currency} />} />
                 <Route path="/profile" element={<ProfilePage 
                   profiles={state.profiles}
                   activeProfileId={state.activeProfileId}
                   onSwitchProfile={handleSwitchProfile}
                   onSimulateNotification={() => {}}
-                  onClaimReward={(amt, msg, x, y) => addXP(amt, msg, undefined, x, y)}
+                  onClaimReward={(amt: number, msg: string, x?: number, y?: number) => addXP(amt, msg, "", x, y)}
                 />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AnimatePresence>
           ) : <SkeletonLoader />}
-          <div className="h-40" />
+          <div className="h-32" />
         </main>
 
         {!isInitializing && (
           <>
-            <div className="fixed bottom-32 right-6 z-30">
+            <div className="fixed bottom-28 right-6 z-30">
               <m.button
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsAddModalOpen(true)}
-                className="relative w-14 h-14 bg-indigo-600 text-white rounded-[1.25rem] flex items-center justify-center shadow-[0_15px_30px_-5px_rgba(99,102,241,0.5)]"
+                className="w-13 h-13 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-2xl border border-white/20"
               >
-                <Plus size={28} strokeWidth={3} />
+                <Plus size={24} strokeWidth={3} />
               </m.button>
             </div>
-            <div className="fixed bottom-0 left-0 right-0 p-6 z-40 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none">
-              <nav className="glass-card rounded-[2.5rem] p-3 flex items-center justify-between shadow-xl max-w-sm mx-auto pointer-events-auto">
+            <div className="fixed bottom-0 left-0 right-0 p-5 z-40 pointer-events-none">
+              <nav className="glass-card rounded-3xl p-2.5 flex items-center justify-between shadow-2xl max-w-sm mx-auto pointer-events-auto border border-white/40">
                 {[
-                  { to: '/', icon: LayoutGrid, label: 'Home' },
-                  { to: '/history', icon: HistoryIcon, label: 'Log' },
-                  { to: '/rewards', icon: Trophy, label: 'Rewards' },
-                  { to: '/analysis', icon: PieChartIcon, label: 'Insights' },
-                  { to: '/profile', icon: Settings2, label: 'App' },
+                  { to: '/', icon: LayoutGrid, label: 'Vault' },
+                  { to: '/history', icon: HistoryIcon, label: 'Ledger' },
+                  { to: '/rewards', icon: Trophy, label: 'Elite' },
+                  { to: '/analysis', icon: PieChartIcon, label: 'Intel' },
+                  { to: '/profile', icon: Settings2, label: 'Control' },
                 ].map((item, idx) => (
                   <NavItem key={idx} item={item} />
                 ))}

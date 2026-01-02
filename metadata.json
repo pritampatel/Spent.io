@@ -1,8 +1,5 @@
 {
   "name": "Spent.io - Intelligent Expense Tracker",
   "description": "A premium, mobile-first expense tracker with multiple profile support, budget management, and gamified XP rewards.",
-  "requestFramePermissions": [],
-  "permissions": [
-    "notifications"
-  ]
+  "requestFramePermissions": []
 }

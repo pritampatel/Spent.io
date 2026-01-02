@@ -1,14 +1,22 @@
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { 
-  Settings, LogOut, Shield, ChevronRight, Bell, Edit3, Check, Globe, CreditCard, HelpCircle, 
-  FlaskConical, PlayCircle, Sparkles, Zap, TestTube2, Trophy, Flame, Leaf, Swords, Heart, 
-  Target as TargetIcon
+  ChevronRight, 
+  Bell, 
+  Zap, 
+  LogOut,
+  Globe,
+  Fingerprint,
+  Settings as SettingsIcon,
+  Crown,
+  ShieldAlert,
+  Wallet,
+  Smartphone,
+  Cpu,
+  Mail
 } from 'lucide-react';
 import { Profile } from '../types';
-import RewardsPreview from '../components/RewardsPreview';
-import ReminderSettings from '../components/ReminderSettings';
 
 const m = motion as any;
 
@@ -17,138 +25,101 @@ interface Props {
   activeProfileId: string;
   onSwitchProfile: (id: string) => void;
   onSimulateNotification: () => void;
-  // Fixed: Added optional x and y parameters to support XP animation from interaction source
   onClaimReward: (amount: number, message: string, x?: number, y?: number) => void;
 }
 
-const ProfilePage: React.FC<Props> = ({ profiles, activeProfileId, onSwitchProfile, onSimulateNotification, onClaimReward }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const ProfilePage: React.FC<Props> = ({ profiles, activeProfileId, onSwitchProfile }) => {
   const activeProfile = profiles.find(p => p.id === activeProfileId)!;
 
-  const questList = [
-    { id: 'q1', title: "7-Day Streak", icon: <Flame size={20} className="text-orange-500" />, progress: 85, reward: 250, msg: "7-Day Streak Maintained! +250 XP", color: "from-orange-500/10 to-transparent" },
-    { id: 'q2', title: "Eco-Warrior", icon: <Leaf size={20} className="text-emerald-500" />, progress: 45, reward: 500, msg: "Eco-Warrior Achievement! +500 XP", color: "from-emerald-500/10 to-transparent" },
-    { id: 'q3', title: "Budget King", icon: <Swords size={20} className="text-indigo-500" />, progress: 15, reward: 750, msg: "Budget King Unlocked! +750 XP", color: "from-indigo-500/10 to-transparent" },
-    { id: 'q4', title: "Savings Guru", icon: <TargetIcon size={20} className="text-purple-500" />, progress: 60, reward: 300, msg: "Savings Guru Progress! +300 XP", color: "from-purple-500/10 to-transparent" },
-  ];
-
-  return (
-    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6 pt-2 space-y-10">
-      <div className="relative">
-        <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-[3.5rem] blur-xl" />
-        <div className="relative bg-slate-50 border-2 border-indigo-100/50 rounded-[3rem] p-8 space-y-8 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
-                <FlaskConical size={24} />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Spent Quests</h3>
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Active Progression</p>
-              </div>
-            </div>
-            <Trophy size={20} className="text-amber-500" />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {questList.map((q) => (
-              <m.div 
-                key={q.id}
-                whileTap={{ scale: 0.98 }}
-                className={`bg-white rounded-[2rem] p-5 border border-slate-100 soft-shadow flex items-center justify-between bg-gradient-to-r ${q.color}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-50">
-                    {q.icon}
-                  </div>
-                  <div>
-                    <p className="text-[12px] font-black text-slate-800 tracking-tight mb-1">{q.title}</p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <m.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${q.progress}%` }}
-                          className="h-full bg-indigo-600 rounded-full" 
-                        />
-                      </div>
-                      <span className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">{q.reward} XP</span>
-                    </div>
-                  </div>
-                </div>
-                <m.button 
-                  whileTap={{ scale: 0.9, rotate: 15 }}
-                  // Fixed: Passed click coordinates to onClaimReward for better XP animation feedback
-                  onClick={(e: React.MouseEvent) => onClaimReward(q.reward, q.msg, e.clientX, e.clientY)} 
-                  className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"
-                >
-                  <PlayCircle size={18} />
-                </m.button>
-              </m.div>
-            ))}
-          </div>
-
-          <RewardsPreview />
-          <ReminderSettings />
-          
-          <div className="bg-white rounded-[2.5rem] p-6 soft-shadow border border-indigo-50">
-            <h4 className="text-sm font-black text-slate-800 tracking-tight mb-2">Security: Mobile Alerts</h4>
-            <p className="text-[10px] font-medium text-slate-400 leading-relaxed mb-6">
-              Test your device's native notification sync. Ensures you never miss a budget leak.
-            </p>
-            <m.button 
-              whileTap={{ scale: 0.95 }}
-              onClick={onSimulateNotification}
-              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-3"
-            >
-              <Bell size={18} /> Sync Device Permissions
-            </m.button>
-          </div>
+  const SettingRow = ({ icon: Icon, label, value, color = "indigo", onClick }: any) => (
+    <m.div 
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex items-center justify-between p-6 bg-white rounded-[2.25rem] border border-slate-50 shadow-sm group cursor-pointer hover:border-indigo-100 transition-colors"
+    >
+      <div className="flex items-center gap-5">
+        <div className={`w-12 h-12 bg-slate-950 text-white rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
+          <Icon size={18} />
+        </div>
+        <div className="space-y-0.5">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</p>
+          <p className="text-[15px] font-black text-slate-800 tracking-tight">{value}</p>
         </div>
       </div>
+      <ChevronRight size={18} className="text-slate-200 group-hover:text-indigo-400 transition-colors" />
+    </m.div>
+  );
 
-      <section className="relative mt-8">
-        <div className="relative bg-white rounded-[3rem] p-10 soft-shadow border border-slate-50 text-center">
-          <div className="relative w-24 h-24 mx-auto mb-4">
-            <img src={activeProfile.avatar} alt="" className="w-full h-full rounded-[2.5rem] object-cover border-4 border-white shadow-2xl" />
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-amber-500 text-white rounded-xl flex items-center justify-center border-2 border-white shadow-lg">
-              <Zap size={14} className="fill-current" />
+  return (
+    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 pt-6 space-y-10 pb-32">
+      <header className="flex items-center gap-4 mb-4">
+        <div className="w-12 h-12 bg-slate-950 text-white rounded-2xl flex items-center justify-center shadow-xl">
+          <SettingsIcon size={24} />
+        </div>
+        <div>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Settings</h2>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Protocol Configuration</p>
+        </div>
+      </header>
+
+      {/* Identity Card */}
+      <section className="bg-slate-950 rounded-[3.25rem] p-10 text-white relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]" />
+        <div className="flex flex-col items-center text-center space-y-8 relative z-10">
+          <div className="relative">
+            <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full" />
+            <img src={activeProfile.avatar} alt="" className="relative w-32 h-32 rounded-[3rem] object-cover border-4 border-white/10 shadow-2xl" />
+            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center border-4 border-slate-950 shadow-xl">
+              <Crown size={18} className="text-white" />
             </div>
           </div>
-          <h3 className="text-xl font-black text-slate-800 tracking-tight">{activeProfile.name}</h3>
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <span className="text-[9px] font-black bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full uppercase tracking-widest">
-              Lvl {activeProfile.level} Legend
-            </span>
-            <span className="text-[9px] font-black bg-orange-50 text-orange-600 px-3 py-1 rounded-full uppercase tracking-widest">
-              {activeProfile.xp} Total XP
-            </span>
+          <div className="space-y-2">
+            <h3 className="text-3xl font-black tracking-tighter">{activeProfile.name}</h3>
+            <div className="flex items-center justify-center gap-3">
+               <span className="text-[9px] font-black bg-white/5 text-indigo-400 px-4 py-2 rounded-full uppercase tracking-[0.2em] border border-white/5">
+                 Rank: Elite Architect
+               </span>
+               <span className="text-[9px] font-black bg-white/5 text-amber-400 px-4 py-2 rounded-full uppercase tracking-[0.2em] border border-white/5">
+                 LV.{activeProfile.level}
+               </span>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Security Core */}
       <section className="space-y-4">
-        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Account Entities</h4>
-        <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 -mx-6 px-6">
-          {profiles.map((p) => (
-            <m.button
-              key={p.id}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => onSwitchProfile(p.id)}
-              className={`flex-shrink-0 flex items-center gap-4 pl-4 pr-6 py-4 rounded-[2rem] border-2 transition-all ${activeProfileId === p.id ? 'border-indigo-600 bg-indigo-50 shadow-inner' : 'border-slate-50 bg-white text-slate-500 hover:border-slate-200'}`}
-            >
-              <img src={p.avatar} alt="" className="w-10 h-10 rounded-2xl shadow-sm border border-white" />
-              <div className="text-left">
-                <span className={`block text-[11px] font-black uppercase tracking-tighter ${activeProfileId === p.id ? 'text-indigo-600' : 'text-slate-400'}`}>
-                  {p.name}
-                </span>
-                <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Active Entity</span>
-              </div>
-            </m.button>
-          ))}
+        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Security Core</h4>
+        <div className="space-y-3">
+          <SettingRow icon={Fingerprint} label="Authentication" value="Biometric Vault Lock" />
+          <SettingRow icon={ShieldAlert} label="Encryption" value="AES-256 Multi-Layer" />
+          <SettingRow icon={Smartphone} label="Device" value="Haptic Pulse Engine" />
         </div>
       </section>
 
-      <div className="h-48" />
+      {/* Local Logic */}
+      <section className="space-y-4">
+        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4">Application Logic</h4>
+        <div className="space-y-3">
+          <SettingRow icon={Bell} label="Push Notifications" value="High Priority Alerts" />
+          <SettingRow icon={Globe} label="Localization" value={`Primary: ${activeProfile.settings.currency} Currency`} />
+          <SettingRow icon={Cpu} label="AI Processing" value="Real-time Alpha Insights" />
+          <SettingRow icon={Mail} label="Reports" value="Monthly Intelligence Digest" />
+        </div>
+      </section>
+
+      {/* Final Actions */}
+      <section className="pt-10 space-y-4 text-center">
+        <m.button 
+          whileTap={{ scale: 0.98 }}
+          className="w-full py-6 bg-red-50 text-red-500 rounded-[2.25rem] font-black text-[11px] uppercase tracking-[0.25em] flex items-center justify-center gap-3 border border-red-100"
+        >
+          <LogOut size={18} /> Terminal Logout
+        </m.button>
+        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.5em] mt-8">Spent.io Wealth OS • v4.2.0 Platinum</p>
+      </section>
+
+      <div className="h-20" />
     </m.div>
   );
 };

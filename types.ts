@@ -18,23 +18,22 @@ export interface Budget {
   profileId: string;
 }
 
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  xpValue: number;
-  completed: boolean;
-  category: 'daily' | 'milestone' | 'social';
+export interface AppSettings {
+  currency: string;
+  theme: 'light' | 'dark' | 'system';
+  notificationsEnabled: boolean;
+  biometricLock: boolean;
+  aiInsightsFrequency: 'daily' | 'weekly' | 'realtime';
 }
 
 export interface Profile {
   id: string;
   name: string;
   avatar: string;
-  currency: string;
   xp: number;
   level: number;
   streak: number;
+  settings: AppSettings;
 }
 
 export interface AppState {
